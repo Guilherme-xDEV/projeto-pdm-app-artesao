@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.nprojetoartesanato.ui.cadastroArtesao.CadastroArtesaoScreen
 import com.example.nprojetoartesanato.ui.dashboard.DashboardScreen
 import com.example.nprojetoartesanato.ui.login.LoginScreen
 import com.example.nprojetoartesanato.ui.produto.CadastroProdutoScreen
@@ -16,6 +17,7 @@ sealed class Screens(val route: String) {
     object CadastroProduto : Screens("cadastro_produto")
     object RegistrarVenda : Screens("registrar_venda")
     object Historico : Screens("historico")
+    object CadastroArtesao : Screens("cadastro_artesao")
 }
 
 @Composable
@@ -44,6 +46,10 @@ fun AppNavigation() {
 
         composable(Screens.Historico.route) {
             HistoricoVendasScreen()
+        }
+
+        composable(Screens.CadastroArtesao.route) {
+            CadastroArtesaoScreen(navController)
         }
     }
 }
