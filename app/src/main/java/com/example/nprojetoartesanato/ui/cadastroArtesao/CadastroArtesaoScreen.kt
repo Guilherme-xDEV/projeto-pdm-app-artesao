@@ -3,7 +3,6 @@ package com.example.nprojetoartesanato.ui.cadastroArtesao
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,8 +16,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 
+import com.example.nprojetoartesanato.navigation.Screens
+
 @Composable
-fun cadastroArtesaoScreen(
+fun CadastroArtesaoScreen(
     navController: NavController,
     viewModel: CadastroArtesaoViewModel = viewModel()
 ) {
@@ -93,8 +94,8 @@ fun cadastroArtesaoScreen(
                 val artesao = viewModel.cadastrar()
 
                 if (artesao != null) {
-                    navController.navigate("login") {
-                        popUpTo("cadastroArtesao") {
+                    navController.navigate(Screens.Login.route) {
+                        popUpTo(Screens.CadastroArtesao.route) {
                             inclusive = true
                         }
                     }

@@ -13,6 +13,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -90,6 +91,16 @@ fun LoginScreen(
                     }
                 ) {
                     Text("Entrar")
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                TextButton(
+                    onClick = {
+                        navController.navigate(Screens.CadastroArtesao.route)
+                    }
+                ) {
+                    Text("Não tem uma conta? Cadastre-se!")
                 }
             }
         }
