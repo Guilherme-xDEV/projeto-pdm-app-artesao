@@ -31,13 +31,25 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.nprojetoartesanato.navigation.Screens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
-    navController: NavController
+    navController: NavController,
+    viewModel: DashboardViewModel = viewModel()
 ) {
+    val artesao by viewModel.artesaoAtual.collectAsState()
+    val produtos = viewModel.produtos
+
+    LaunchedEffect(Unit) {
+        viewModel.carregarProdutos()
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -72,7 +84,7 @@ fun DashboardScreen(
 
                     Column {
                         Text(
-                            text = "Olá, Maria!",
+                            text = "Olá, ${artesao?.nome ?: "Usuário"}!",
                             style = MaterialTheme.typography.headlineSmall
                         )
 
@@ -96,7 +108,7 @@ fun DashboardScreen(
                     ) {
                         Text("Produtos")
                         Text(
-                            text = "42",
+                            text = "${produtos.size}",
                             style = MaterialTheme.typography.headlineMedium
                         )
                     }

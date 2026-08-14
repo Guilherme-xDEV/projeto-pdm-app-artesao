@@ -12,12 +12,12 @@ class ProdutoRepository {
         return LocalDataStore.adicionarProduto(produto)
     }
 
-    fun buscarProduto(
-        produto: Produto
+    fun buscarPorArtesao(
+        artesaoId: Long
     ): List<Produto> {
 
         return LocalDataStore.buscarProdutosDoArtesao(
-            produto.artesaoId // verify if this works!
+            artesaoId
         )
     }
 }
