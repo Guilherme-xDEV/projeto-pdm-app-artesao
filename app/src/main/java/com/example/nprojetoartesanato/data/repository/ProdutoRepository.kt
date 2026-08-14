@@ -21,3 +21,30 @@ class ProdutoRepository {
         )
     }
 }
+
+/*
+
+CadastroProdutoScreen
+        │
+        │ viewModel.cadastrar()
+        ▼
+CadastroProdutoViewModel
+        │
+        ├── verifica artesão autenticado
+        │
+        ├── valida nome
+        ├── valida descrição
+        ├── valida preço
+        ├── valida estoque
+        │
+        ▼
+      Produto
+        │
+        │ artesaoId = SessionManager.artesaoAtual.id
+        ▼
+ProdutoRepository
+        │
+        ▼
+LocalDataStore
+
+ */

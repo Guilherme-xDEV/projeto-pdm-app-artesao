@@ -34,6 +34,10 @@ class CadastroProdutoViewModel : ViewModel() {
         nome = valor
     }
 
+    fun atualizarDescricao(valor: String) {
+        descricao = valor
+    }
+
     fun atualizarPreco(valor: String) {
         preco = valor
     }
@@ -114,7 +118,7 @@ class CadastroProdutoViewModel : ViewModel() {
             descricao = descricao.trim(),
             preco = precoConvertido,
             quantidadeEstoque = quantidadeConvertida,
-            artesaoId = artesao.id
+            artesaoId = artesao.id // <-- this represents the association
         )
 
         //6. Persist through repository
