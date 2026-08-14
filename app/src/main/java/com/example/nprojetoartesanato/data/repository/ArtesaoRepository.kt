@@ -3,7 +3,7 @@ package com.example.nprojetoartesanato.data.repository
 import com.example.nprojetoartesanato.data.local.LocalDataStore
 import com.example.nprojetoartesanato.model.Artesao
 
-class ArtesaoRepository {
+object ArtesaoRepository {
 
     fun cadastrar(artesao: Artesao): Artesao {
 
