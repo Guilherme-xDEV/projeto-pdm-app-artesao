@@ -14,14 +14,14 @@ class ProdutoRepository {
         return LocalDataStore.adicionarProduto(produto)
     }
 
-    fun buscarPorArtesao(
-        artesaoId: Long
-    ): List<Produto> {
-
-        return LocalDataStore.buscarProdutosDoArtesao(
-            artesaoId
-        )
-    } // <-- this returns List<Produto>
+//    fun buscarPorArtesao(
+//        artesaoId: Long
+//    ): List<Produto> {
+//
+//        return LocalDataStore.buscarProdutosDoArtesao(
+//            artesaoId
+//        )
+//    } // <-- this returns List<Produto>
 
     fun observarPorArtesao(
         artesaoId: Long
