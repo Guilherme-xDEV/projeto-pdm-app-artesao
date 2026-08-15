@@ -2,6 +2,8 @@ package com.example.nprojetoartesanato.data.repository
 
 import com.example.nprojetoartesanato.data.local.LocalDataStore
 import com.example.nprojetoartesanato.model.Produto
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 class ProdutoRepository {
 
@@ -19,7 +21,18 @@ class ProdutoRepository {
         return LocalDataStore.buscarProdutosDoArtesao(
             artesaoId
         )
-    }
+    } // <-- this returns List<Produto>
+
+    fun observarPorArtesao(
+        artesaoId: Long
+    ): Flow<List<Produto>> {
+
+        return LocalDataStore.produtoList.map { produtos ->
+            produtos.filter {
+                it.artesaoId == artesaoId
+            }
+        }
+    } // <-- this returns Flow<List<Produto>>
 }
 
 /*
