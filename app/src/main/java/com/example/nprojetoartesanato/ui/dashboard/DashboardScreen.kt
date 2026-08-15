@@ -122,7 +122,7 @@ fun DashboardScreen(
                     ) {
                         Text("Vendas")
                         Text(
-                            text = "127",
+                            text = "0",
                             style = MaterialTheme.typography.headlineMedium
                         )
                     }

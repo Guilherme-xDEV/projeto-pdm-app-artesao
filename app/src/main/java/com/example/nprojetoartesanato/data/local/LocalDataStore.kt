@@ -2,11 +2,15 @@ package com.example.nprojetoartesanato.data.local
 
 import com.example.nprojetoartesanato.model.Artesao
 import com.example.nprojetoartesanato.model.Produto
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 object LocalDataStore {
 
     private val artesaoList = mutableListOf<Artesao>()
-    private val produtoList = mutableListOf<Produto>()
+    private val _produtoList = MutableStateFlow<List<Produto>>(emptyList())
+    val produtoList: StateFlow<List<Produto>> = _produtoList.asStateFlow()
 
     private var nextArtesaoId = 1L
     private var nextProdutoId = 1L
@@ -37,20 +41,21 @@ object LocalDataStore {
     fun adicionarProduto(
         produto: Produto
     ): Produto {
+
         val novoProduto = produto.copy(
             id = nextProdutoId++
         )
 
-        produtoList.add(novoProduto)
+        _produtoList.value += novoProduto
 
         return novoProduto
     }
 
     fun buscarProdutosDoArtesao(
-        artesaoId:  Long
+        artesaoId: Long
     ): List<Produto> {
 
-        return produtoList.filter {
+        return _produtoList.value.filter {
             it.artesaoId == artesaoId
         }
     }
