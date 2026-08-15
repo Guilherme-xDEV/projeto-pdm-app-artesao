@@ -90,10 +90,9 @@ fun CadastroArtesaoScreen(
 
         Button(
             onClick = {
+                val sucesso = viewModel.cadastrar()
 
-                val artesao = viewModel.cadastrar()
-
-                if (artesao != null) {
+                if (sucesso) {
                     navController.navigate(Screens.Login.route) {
                         popUpTo(Screens.CadastroArtesao.route) {
                             inclusive = true

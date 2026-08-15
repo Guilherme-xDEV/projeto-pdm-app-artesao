@@ -37,7 +37,7 @@ fun AppNavigation() {
         }
 
         composable(Screens.CadastroProduto.route) {
-            CadastroProdutoScreen()
+            CadastroProdutoScreen(navController)
         }
 
         composable(Screens.RegistrarVenda.route) {

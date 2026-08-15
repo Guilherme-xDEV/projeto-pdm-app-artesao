@@ -36,6 +36,7 @@ fun LoginScreen(
 ) {
     val usuario = viewModel.usuario
     val senha = viewModel.senha
+    val erro = viewModel.erro
 
     Box(
         modifier = Modifier
@@ -82,12 +83,26 @@ fun LoginScreen(
                     singleLine = true
                 )
 
+                erro?.let { mensagem ->
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = mensagem,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Button(
                     modifier = Modifier.fillMaxWidth(),
                     onClick = {
-                        navController.navigate(Screens.Dashboard.route)
+
+                        val sucesso = viewModel.login()
+
+                        if (sucesso) {
+                            navController.navigate(Screens.Dashboard.route)
+                        }
                     }
                 ) {
                     Text("Entrar")

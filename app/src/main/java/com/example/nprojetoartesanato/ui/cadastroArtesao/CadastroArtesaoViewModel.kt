@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import com.example.nprojetoartesanato.data.repository.ArtesaoRepository
 import com.example.nprojetoartesanato.model.Artesao
 
 class CadastroArtesaoViewModel : ViewModel() {
@@ -46,7 +47,7 @@ class CadastroArtesaoViewModel : ViewModel() {
         senha = valor
     }
 
-    fun cadastrar(): Artesao? {
+    fun cadastrar(): Boolean {
 
         if (
             nome.isBlank() ||
@@ -56,19 +57,23 @@ class CadastroArtesaoViewModel : ViewModel() {
             senha.isBlank()
         ) {
             erro = "Todos os campos são obrigatórios."
-            return null
+            return false
         }
 
-        erro = null
-
-        return Artesao(
-            id = System.currentTimeMillis(),
+        val artesao = Artesao(
+            id = 0,
             nome = nome,
             telefone = telefone,
             identificacao = identificacao,
             usuario = usuario,
             senha = senha
         )
+
+        ArtesaoRepository.cadastrar(artesao)
+
+        erro = null
+
+        return true
     }
 }
 
@@ -77,6 +82,13 @@ Since this project has no Repository yet, this ViewModel class will be used to
 control the state of the form submitted by the created 'Artesao' when he enters
 data at the 'CadastroArtesaoScreen'. Think of this as a non-persistent database.
 
-In the code above System.currentTimeMillis() is being used as a simple way
-of generating a identifier. This will not be the default strategy here.
+CadastroArtesaoScreen
+        ↓
+ViewModel
+        ↓
+repository.cadastrar()
+        ↓
+LocalDataStore
+        ↓
+artesão armazenado
  */
