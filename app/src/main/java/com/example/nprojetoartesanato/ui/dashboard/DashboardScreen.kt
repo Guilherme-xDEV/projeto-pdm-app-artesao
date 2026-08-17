@@ -96,6 +96,9 @@ fun DashboardScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 ElevatedCard(
+                    onClick = {
+                        navController.navigate(Screens.Produtos.route)
+                    },
                     modifier = Modifier.weight(1f)
                 ) {
                     Column(

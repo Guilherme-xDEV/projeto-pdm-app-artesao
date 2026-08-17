@@ -8,12 +8,14 @@ import com.example.nprojetoartesanato.ui.cadastroArtesao.CadastroArtesaoScreen
 import com.example.nprojetoartesanato.ui.dashboard.DashboardScreen
 import com.example.nprojetoartesanato.ui.login.LoginScreen
 import com.example.nprojetoartesanato.ui.produto.CadastroProdutoScreen
+import com.example.nprojetoartesanato.ui.produto.ProdutosScreen
 import com.example.nprojetoartesanato.ui.venda.HistoricoVendasScreen
 import com.example.nprojetoartesanato.ui.venda.RegistrarVendaScreen
 
 sealed class Screens(val route: String) {
     object Login : Screens("login")
     object Dashboard : Screens("dashboard")
+    object Produtos : Screens("produtos")
     object CadastroProduto : Screens("cadastro_produto")
     object RegistrarVenda : Screens("registrar_venda")
     object Historico : Screens("historico")
@@ -34,6 +36,10 @@ fun AppNavigation() {
 
         composable(Screens.Dashboard.route) {
             DashboardScreen(navController)
+        }
+
+        composable(Screens.Produtos.route) {
+            ProdutosScreen(navController)
         }
 
         composable(Screens.CadastroProduto.route) {
