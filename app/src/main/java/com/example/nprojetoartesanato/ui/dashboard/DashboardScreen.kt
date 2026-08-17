@@ -31,7 +31,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -44,11 +43,7 @@ fun DashboardScreen(
     viewModel: DashboardViewModel = viewModel()
 ) {
     val artesao by viewModel.artesaoAtual.collectAsState()
-    val produtos = viewModel.produtos
-
-    LaunchedEffect(Unit) {
-        viewModel.carregarProdutos()
-    }
+    val produtos by viewModel.produtos.collectAsState()
 
     Scaffold(
         topBar = {
@@ -122,7 +117,7 @@ fun DashboardScreen(
                     ) {
                         Text("Vendas")
                         Text(
-                            text = "127",
+                            text = "0",
                             style = MaterialTheme.typography.headlineMedium
                         )
                     }
