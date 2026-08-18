@@ -59,6 +59,15 @@ object LocalDataStore {
             it.artesaoId == artesaoId
         }
     }
+
+    fun buscarProdutoPorId(
+        id: Long
+    ): Produto? {
+
+        return _produtoList.value.find {
+            it.id == id
+        }
+    }
 }
 
 /*

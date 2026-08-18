@@ -1,13 +1,16 @@
 package com.example.nprojetoartesanato.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.nprojetoartesanato.ui.cadastroArtesao.CadastroArtesaoScreen
 import com.example.nprojetoartesanato.ui.dashboard.DashboardScreen
 import com.example.nprojetoartesanato.ui.login.LoginScreen
 import com.example.nprojetoartesanato.ui.produto.CadastroProdutoScreen
+import com.example.nprojetoartesanato.ui.produto.ProdutoQrCodeScreen
 import com.example.nprojetoartesanato.ui.produto.ProdutosScreen
 import com.example.nprojetoartesanato.ui.venda.HistoricoVendasScreen
 import com.example.nprojetoartesanato.ui.venda.RegistrarVendaScreen
@@ -17,6 +20,9 @@ sealed class Screens(val route: String) {
     object Dashboard : Screens("dashboard")
     object Produtos : Screens("produtos")
     object CadastroProduto : Screens("cadastro_produto")
+    object ProdutoQrCode : Screens("produto_qrcode/{produtoId}") {
+        fun createRoute(produtoId: Long) = "produto_qrcode/$produtoId"
+    }
     object RegistrarVenda : Screens("registrar_venda")
     object Historico : Screens("historico")
     object CadastroArtesao : Screens("cadastro_artesao")
@@ -44,6 +50,14 @@ fun AppNavigation() {
 
         composable(Screens.CadastroProduto.route) {
             CadastroProdutoScreen(navController)
+        }
+
+        composable(
+            route = Screens.ProdutoQrCode.route,
+            arguments = listOf(navArgument("produtoId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val produtoId = backStackEntry.arguments?.getLong("produtoId") ?: 0L
+            ProdutoQrCodeScreen(navController, produtoId)
         }
 
         composable(Screens.RegistrarVenda.route) {
