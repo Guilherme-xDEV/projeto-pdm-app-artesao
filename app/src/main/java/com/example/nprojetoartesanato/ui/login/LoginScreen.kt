@@ -1,5 +1,7 @@
 package com.example.nprojetoartesanato.ui.login
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -21,12 +23,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.nprojetoartesanato.R
 import com.example.nprojetoartesanato.navigation.Screens
 
 @Composable
@@ -38,15 +46,52 @@ fun LoginScreen(
     val senha = viewModel.senha
     val erro = viewModel.erro
 
+    // Random selection of background image
+    val backgroundImages = remember {
+        listOf(
+            R.drawable.img1,
+            R.drawable.img3,
+            R.drawable.img5,
+            R.drawable.img6,
+            R.drawable.img7
+        )
+    }
+    val randomImage = remember { backgroundImages.random() }
+
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
+        modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
+        // Background Image with scrim
+        Image(
+            painter = painterResource(id = randomImage),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+
+        // Scrim/Overlay to ensure text readability
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Black.copy(alpha = 0.3f),
+                            Color.Black.copy(alpha = 0.6f)
+                        )
+                    )
+                )
+        )
+
         Card(
-            modifier = Modifier.fillMaxWidth(),
-            elevation = CardDefaults.cardElevation(8.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            elevation = CardDefaults.cardElevation(8.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)
+            )
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
@@ -54,7 +99,8 @@ fun LoginScreen(
             ) {
                 Text(
                     text = "Centro de Artesanato",
-                    style = MaterialTheme.typography.headlineSmall
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
                 )
 
                 Text(

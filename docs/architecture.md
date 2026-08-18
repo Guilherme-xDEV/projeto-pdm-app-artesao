@@ -82,3 +82,122 @@ VendaApi
 Retrofit
 ↓
 Spring Boot
+
+2. Example with Artesao login
+LoginViewModel
+↓
+ArtesaoRepository
+↓
+Retrofit
+↓
+POST /auth/login
+↓
+Spring Security / Controller
+↓
+PostgreSQL
+
+## Current Application Flux
+
+                    LOGIN
+                      │
+                      ▼
+              LoginViewModel
+                      │
+                      ▼
+             ArtesaoRepository
+                      │
+                      ▼
+              LocalDataStore
+                      │
+                encontrou?
+                  /       \
+                não       sim
+                │          │
+              erro         ▼
+                       SessionManager
+                            │
+                            ▼
+                        Dashboard
+                            │
+             ┌──────────────┼──────────────┐
+             │              │              │
+             ▼              ▼              ▼
+       Cadastrar       Registrar       Histórico
+        Produto          Venda           Vendas
+             │
+             ▼
+    ProdutoViewModel
+             │
+             ▼
+    ProdutoRepository
+             │
+             ▼
+      LocalDataStore
+             │
+             ▼
+      artesaoId = sessão.id
+
+### Or Simply
+Cadastro de Artesão
+↓
+ArtesaoRepository
+↓
+LocalDataStore
+↓
+Login
+↓
+ArtesaoRepository.autenticar()
+↓
+SessionManager
+↓
+Dashboard
+
+### Next Flux
+Dashboard
+↓
+CadastroProdutoScreen
+↓
+CadastroProdutoViewModel
+↓
+ProdutoRepository
+↓
+LocalDataStore
+↓
+Produto
+↓
+artesaoId = SessionManager.artesaoAtual.id
+
+---
+
+### New Product Flux
+
+                  Cadastrar
+                      │
+                      ▼
+             CadastroProdutoViewModel
+                      │
+                      ▼
+          Existe artesão autenticado?
+                 /          \
+               não          sim
+                │            │
+               erro          ▼
+                     Validar campos
+                            │
+                       ┌────┴────┐
+                       │         │
+                    inválido    válido
+                       │         │
+                      erro       ▼
+                         Converter dados
+                               │
+                               ▼
+                            Produto
+                               │
+                     artesaoId = sessão.id
+                               │
+                               ▼
+                    ProdutoRepository
+                               │
+                               ▼
+                        LocalDataStore

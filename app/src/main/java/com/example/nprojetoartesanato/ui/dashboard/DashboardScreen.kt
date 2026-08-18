@@ -29,6 +29,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.runtime.collectAsState
@@ -40,15 +43,23 @@ import com.example.nprojetoartesanato.navigation.Screens
 @Composable
 fun DashboardScreen(
     navController: NavController,
-    viewModel: DashboardViewModel = viewModel()
+    viewModel: DashboardViewModel = viewModel(),
 ) {
     val artesao by viewModel.artesaoAtual.collectAsState()
     val produtos by viewModel.produtos.collectAsState()
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
-                title = { Text("Centro de Artesanato") }
+                title = {
+                    Text(
+                        "Centro de Artesanato",
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                scrollBehavior = scrollBehavior
             )
         }
     ) { padding ->
@@ -96,6 +107,9 @@ fun DashboardScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 ElevatedCard(
+                    onClick = {
+                        navController.navigate(Screens.Produtos.route)
+                    },
                     modifier = Modifier.weight(1f)
                 ) {
                     Column(
@@ -103,7 +117,7 @@ fun DashboardScreen(
                     ) {
                         Text("Produtos")
                         Text(
-                            text = "${produtos.size}",
+                            text = produtos.size.toString(),
                             style = MaterialTheme.typography.headlineMedium
                         )
                     }
