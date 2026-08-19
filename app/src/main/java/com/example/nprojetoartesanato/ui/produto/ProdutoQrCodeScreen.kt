@@ -47,7 +47,7 @@ fun ProdutoQrCodeScreen(
     }
 
     val produto = remember(produtoId) {
-        repository.buscarPorId(produtoId)
+        repository.buscarPorId(produtoId) // <-- move this to a ProdutoQrCodeViewModel later
     }
 
     Scaffold(
