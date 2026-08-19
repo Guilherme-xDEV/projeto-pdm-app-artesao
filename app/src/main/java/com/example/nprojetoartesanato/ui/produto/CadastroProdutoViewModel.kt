@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import com.example.nprojetoartesanato.data.repository.ProdutoRepository
 import com.example.nprojetoartesanato.data.session.SessionManager
 import com.example.nprojetoartesanato.model.Produto
+import java.util.UUID
 
 class CadastroProdutoViewModel : ViewModel() {
 
@@ -111,6 +112,8 @@ class CadastroProdutoViewModel : ViewModel() {
             return false
         }
 
+        val qrCodeId = UUID.randomUUID().toString()
+
         //5. Create product
         val produto = Produto(
             id = 0,
@@ -118,7 +121,8 @@ class CadastroProdutoViewModel : ViewModel() {
             descricao = descricao.trim(),
             preco = precoConvertido,
             quantidadeEstoque = quantidadeConvertida,
-            artesaoId = artesao.id // <-- this represents the association
+            artesaoId = artesao.id, // <-- this represents the association
+            qrCodeId = qrCodeId
         )
 
         //6. Persist through repository

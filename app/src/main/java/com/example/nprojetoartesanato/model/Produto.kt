@@ -6,5 +6,6 @@ data class Produto(
     val descricao: String,
     val preco: Double,
     val quantidadeEstoque: Int,
-    val artesaoId: Long
+    val artesaoId: Long,
+    val qrCodeId: String
 )

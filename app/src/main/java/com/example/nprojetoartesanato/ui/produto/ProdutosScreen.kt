@@ -136,7 +136,14 @@ fun ProdutosScreen(
                         items = produtos,
                         key = { it.id }
                     ) { produto ->
-                        ProdutoCard(produto = produto)
+                        ProdutoCard(
+                            produto = produto,
+                            onClick = {
+                                navController.navigate(
+                                    Screens.ProdutoQrCode.createRoute(produto.id)
+                                )
+                            }
+                        )
                     }
                 }
             }

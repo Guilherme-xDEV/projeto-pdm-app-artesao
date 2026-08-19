@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.map
 class ProdutoRepository {
 
     fun cadastrar(
-        produto: Produto
+        produto: Produto,
     ): Produto {
 
         return LocalDataStore.adicionarProduto(produto)
@@ -33,6 +33,13 @@ class ProdutoRepository {
             }
         }
     } // <-- this returns Flow<List<Produto>>
+
+    fun buscarPorId(
+        id: Long
+    ): Produto? {
+
+        return LocalDataStore.buscarProdutoPorId(id)
+    }
 }
 
 /*
