@@ -2,6 +2,7 @@ package com.example.nprojetoartesanato.data.repository
 
 import com.example.nprojetoartesanato.data.local.LocalDataStore
 import com.example.nprojetoartesanato.model.Produto
+import com.example.nprojetoartesanato.model.dto.AtualizarProdutoDTO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -47,12 +48,12 @@ class ProdutoRepository {
 
     fun atualizar(
         id: Long,
-        //dados: AtualizarProdutoDTO
+        dados: AtualizarProdutoDTO
     ): Produto? {
 
         return LocalDataStore.atualizarProduto(
             id,
-            //dados
+            dados
         )
     }
 

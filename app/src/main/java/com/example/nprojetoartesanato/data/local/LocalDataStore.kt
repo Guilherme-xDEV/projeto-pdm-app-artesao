@@ -2,6 +2,7 @@ package com.example.nprojetoartesanato.data.local
 
 import com.example.nprojetoartesanato.model.Artesao
 import com.example.nprojetoartesanato.model.Produto
+import com.example.nprojetoartesanato.model.dto.AtualizarProdutoDTO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -85,16 +86,16 @@ object LocalDataStore {
     }
 
     fun atualizarProduto(
-        id: Long
-        //dados: AtualizarProdutoDTO
+        id: Long,
+        dados: AtualizarProdutoDTO
     ): Produto? {
 
         val produtoAtual = buscarProdutoPorId(id) ?: return null
 
         val produtoAtualizado = produtoAtual.copy(
-//            nome = dados.nome,
-//            descricao = dados.descricao,
-//            preco = dados.preco
+            nome = dados.nome,
+            descricao = dados.descricao,
+            preco = dados.preco
         )
 
         _produtoList.value =
