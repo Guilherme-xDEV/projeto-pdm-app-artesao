@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.nprojetoartesanato.data.repository.ProdutoRepository
 import com.example.nprojetoartesanato.data.session.SessionManager
 import com.example.nprojetoartesanato.model.Produto
+import com.example.nprojetoartesanato.model.dto.AtualizarProdutoDTO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,5 +38,14 @@ class ProdutosViewModel : ViewModel() {
                     }
             }
         }
+    }
+
+    fun atualizarProduto(id: Long, nome: String, descricao: String, preco: Double) {
+        val dto = AtualizarProdutoDTO(
+            nome = nome,
+            descricao = descricao,
+            preco = preco
+        )
+        produtoRepository.atualizar(id, dto)
     }
 }

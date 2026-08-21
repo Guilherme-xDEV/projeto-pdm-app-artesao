@@ -10,10 +10,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Inventory
+import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,6 +30,7 @@ import com.example.nprojetoartesanato.model.Produto
 fun ProdutoCard(
     produto: Produto,
     onClick: () -> Unit,
+    onEditClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -44,7 +48,6 @@ fun ProdutoCard(
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icon representing the product
             Icon(
                 imageVector = Icons.Default.Inventory,
                 contentDescription = null,
@@ -103,6 +106,27 @@ fun ProdutoCard(
                                 MaterialTheme.colorScheme.onErrorContainer
                         )
                     }
+                }
+            }
+
+            // (Edit and QR Code buttons)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                IconButton(onClick = onEditClick) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Editar Produto",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+                IconButton(onClick = onClick) {
+                    Icon(
+                        imageVector = Icons.Default.QrCode,
+                        contentDescription = "Ver QR Code",
+                        tint = MaterialTheme.colorScheme.secondary
+                    )
                 }
             }
         }
