@@ -55,4 +55,8 @@ class ProdutosViewModel : ViewModel() {
         val produtoAtualizado = produtoRepository.atualizar(id, dto)
         return produtoAtualizado != null
     }
+
+    fun deletarProduto(id: Long) {
+        produtoRepository.excluir(id)
+    }
 }
