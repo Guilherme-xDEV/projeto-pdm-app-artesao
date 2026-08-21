@@ -40,12 +40,19 @@ class ProdutosViewModel : ViewModel() {
         }
     }
 
-    fun atualizarProduto(id: Long, nome: String, descricao: String, preco: Double) {
+    fun atualizarProduto(id: Long, nome: String, descricao: String, preco: Double): Boolean {
+
+        if (nome.isBlank() || preco <= 0.0) {
+            return false
+        }
+
         val dto = AtualizarProdutoDTO(
-            nome = nome,
-            descricao = descricao,
+            nome = nome.trim(),
+            descricao = descricao.trim(),
             preco = preco
         )
-        produtoRepository.atualizar(id, dto)
+
+        val produtoAtualizado = produtoRepository.atualizar(id, dto)
+        return produtoAtualizado != null
     }
 }

@@ -182,6 +182,12 @@ fun EditarProdutoDialog(
     var descricao by remember { mutableStateOf(produto.descricao) }
     var precoText by remember { mutableStateOf(produto.preco.toString()) }
 
+    val nomeErro = nome.isBlank()
+    val precoDouble = precoText.replace(",", ".").toDoubleOrNull()
+    val precoErro = precoDouble == null || precoDouble <= 0.0
+
+    val formValido = !nomeErro && !precoErro
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(text = "Editar Produto") },
@@ -193,20 +199,40 @@ fun EditarProdutoDialog(
                 OutlinedTextField(
                     value = nome,
                     onValueChange = { nome = it },
-                    label = { Text("Nome") },
+                    label = { Text("Nome *") },
+                    isError = nomeErro,
+                    supportingText = {
+                        if (nomeErro) {
+                            Text(
+                                text = "O nome não pode ficar em branco",
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
+
                 OutlinedTextField(
                     value = descricao,
                     onValueChange = { descricao = it },
                     label = { Text("Descrição") },
                     modifier = Modifier.fillMaxWidth()
                 )
+
                 OutlinedTextField(
                     value = precoText,
                     onValueChange = { precoText = it },
-                    label = { Text("Preço") },
+                    label = { Text("Preço (R$) *") },
+                    isError = precoErro,
+                    supportingText = {
+                        if (precoErro) {
+                            Text(
+                                text = if (precoDouble == null) "Informe um valor numérico válido" else "O preço deve ser maior que zero",
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -215,9 +241,11 @@ fun EditarProdutoDialog(
         },
         confirmButton = {
             Button(
+                enabled = formValido, // Desabilita o botão se houver erros de validação
                 onClick = {
-                    val precoDouble = precoText.toDoubleOrNull() ?: produto.preco
-                    onConfirm(nome, descricao, precoDouble)
+                    if (formValido && precoDouble != null) {
+                        onConfirm(nome.trim(), descricao.trim(), precoDouble)
+                    }
                 }
             ) {
                 Text("Salvar")
