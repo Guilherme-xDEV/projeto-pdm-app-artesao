@@ -2,6 +2,7 @@ package com.example.nprojetoartesanato.data.local
 
 import com.example.nprojetoartesanato.model.Artesao
 import com.example.nprojetoartesanato.model.Produto
+import com.example.nprojetoartesanato.model.dto.AtualizarArtesaoDTO
 import com.example.nprojetoartesanato.model.dto.AtualizarProdutoDTO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -9,7 +10,8 @@ import kotlinx.coroutines.flow.asStateFlow
 
 object LocalDataStore {
 
-    private val artesaoList = mutableListOf<Artesao>()
+    private val _artesaoList = MutableStateFlow<List<Artesao>>(emptyList())
+    val artesaoList: StateFlow<List<Artesao>> = _artesaoList.asStateFlow()
     private val _produtoList = MutableStateFlow<List<Produto>>(emptyList())
     val produtoList: StateFlow<List<Produto>> = _produtoList.asStateFlow()
 
@@ -25,7 +27,7 @@ object LocalDataStore {
             id = nextArtesaoId++
         )
 
-        artesaoList.add(novoArtesao)
+        _artesaoList.value += novoArtesao
         return novoArtesao
     }
 
@@ -34,10 +36,47 @@ object LocalDataStore {
         senha: String
     ): Artesao? {
 
-        return artesaoList.find {
+        return _artesaoList.value.find {
             it.usuario == usuario &&
             it.senha == senha
         }
+    }
+
+    fun buscarArtesaoPorId(
+        id: Long
+    ): Artesao? {
+
+        return _artesaoList.value.find { it.id == id }
+    }
+
+    fun listarArtesaos(): List<Artesao> {
+        return _artesaoList.value
+    }
+
+    fun atualizarArtesao(
+        id: Long,
+        dados: AtualizarArtesaoDTO
+    ): Artesao? {
+        val artesaoAtual = buscarArtesaoPorId(id) ?: return null
+
+        val artesaoAtualizado = artesaoAtual.copy(
+            nome = dados.nome,
+            telefone = dados.telefone
+        )
+
+        _artesaoList.value = _artesaoList.value.map { artesao ->
+            if (artesao.id == id) artesaoAtualizado else artesao
+        }
+
+        return artesaoAtualizado
+    }
+
+    fun excluirArtesao(id: Long): Boolean {
+        val artesaoExiste = _artesaoList.value.any { it.id == id }
+        if (!artesaoExiste) return false
+
+        _artesaoList.value = _artesaoList.value.filter { it.id != id }
+        return true
     }
 
     // Product CRUD methods
