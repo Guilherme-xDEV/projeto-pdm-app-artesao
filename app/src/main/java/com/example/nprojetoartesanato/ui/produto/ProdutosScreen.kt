@@ -46,25 +46,31 @@ import androidx.navigation.NavController
 import com.example.nprojetoartesanato.model.Produto
 import com.example.nprojetoartesanato.navigation.Screens
 
+import androidx.compose.material3.ButtonDefaults
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProdutosScreen(
     navController: NavController,
     viewModel: ProdutosViewModel = viewModel()
 ) {
-
     val produtos by viewModel.produtos.collectAsState()
-
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
-    // State to control exhibition of edition dialog
+    // State to control dialogs
     var produtoParaEditar by remember { mutableStateOf<Produto?>(null) }
+    var produtoParaDeletar by remember { mutableStateOf<Produto?>(null) }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
-                title = { Text("Meus Produtos", fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        "Meus Produtos",
+                        fontWeight = FontWeight.Bold
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
@@ -78,7 +84,9 @@ fun ProdutosScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { navController.navigate(Screens.CadastroProduto.route) },
+                onClick = {
+                    navController.navigate(Screens.CadastroProduto.route)
+                },
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             ) {
@@ -86,7 +94,6 @@ fun ProdutosScreen(
             }
         }
     ) { padding ->
-
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -144,13 +151,14 @@ fun ProdutosScreen(
                     ) { produto ->
                         ProdutoCard(
                             produto = produto,
-                            onClick = {
-                                navController.navigate(
-                                    Screens.ProdutoQrCode.createRoute(produto.id)
-                                )
+                            onQrCodeClick = {
+                                navController.navigate(Screens.ProdutoQrCode.createRoute(produto.id))
                             },
                             onEditClick = {
                                 produtoParaEditar = produto
+                            },
+                            onDeleteClick = {
+                                produtoParaDeletar = produto
                             }
                         )
                     }
@@ -167,6 +175,35 @@ fun ProdutosScreen(
             onConfirm = { nome, descricao, preco ->
                 viewModel.atualizarProduto(produto.id, nome, descricao, preco)
                 produtoParaEditar = null
+            }
+        )
+    }
+
+    // Exclusion Confirmation Modal
+    produtoParaDeletar?.let { produto ->
+        AlertDialog(
+            onDismissRequest = { produtoParaDeletar = null },
+            title = { Text(text = "Excluir Produto") },
+            text = {
+                Text(text = "Tem certeza que deseja excluir '${produto.nome}'? Esta ação não poderá ser desfeita.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deletarProduto(produto.id)
+                        produtoParaDeletar = null
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error // red button!
+                    )
+                ) {
+                    Text("Excluir")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { produtoParaDeletar = null }) {
+                    Text("Cancelar")
+                }
             }
         )
     }
