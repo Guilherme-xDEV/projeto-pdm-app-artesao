@@ -1,5 +1,6 @@
 ### Application Flux (after product is registered)
 
+```
 Meus Produtos
 ↓
 seleciona produto
@@ -13,6 +14,7 @@ QrCodeGenerator
 Bitmap
 ↓
 Compose
+```
 
 ### How does Bitmap was implemented:
 
@@ -21,8 +23,8 @@ Compose
 3. Compose convert Bitmap to ImageBitmap
 
 ## Complete Flux:
-7
 
+```
 String
 │
 │ qrCodeId
@@ -40,3 +42,4 @@ ImageBitmap
 │
 ▼
 Compose Image
+```

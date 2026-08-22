@@ -2,6 +2,7 @@ package com.example.nprojetoartesanato.data.repository
 
 import com.example.nprojetoartesanato.data.local.LocalDataStore
 import com.example.nprojetoartesanato.model.Produto
+import com.example.nprojetoartesanato.model.dto.AtualizarProdutoDTO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -14,14 +15,14 @@ class ProdutoRepository {
         return LocalDataStore.adicionarProduto(produto)
     }
 
-//    fun buscarPorArtesao(
-//        artesaoId: Long
-//    ): List<Produto> {
-//
-//        return LocalDataStore.buscarProdutosDoArtesao(
-//            artesaoId
-//        )
-//    } // <-- this returns List<Produto>
+    fun buscarPorArtesao(
+        artesaoId: Long
+    ): List<Produto> {
+
+        return LocalDataStore.buscarProdutosDoArtesao(
+            artesaoId
+        )
+    } // <-- this returns List<Produto>
 
     fun observarPorArtesao(
         artesaoId: Long
@@ -40,31 +41,25 @@ class ProdutoRepository {
 
         return LocalDataStore.buscarProdutoPorId(id)
     }
+
+    fun listarTodos(): List<Produto> {
+        return LocalDataStore.listarProdutos()
+    }
+
+    fun atualizar(
+        id: Long,
+        dados: AtualizarProdutoDTO
+    ): Produto? {
+
+        return LocalDataStore.atualizarProduto(
+            id,
+            dados
+        )
+    }
+
+    fun excluir(
+        id: Long
+    ): Boolean{
+        return LocalDataStore.excluirProduto(id)
+    }
 }
-
-/*
-
-CadastroProdutoScreen
-        │
-        │ viewModel.cadastrar()
-        ▼
-CadastroProdutoViewModel
-        │
-        ├── verifica artesão autenticado
-        │
-        ├── valida nome
-        ├── valida descrição
-        ├── valida preço
-        ├── valida estoque
-        │
-        ▼
-      Produto
-        │
-        │ artesaoId = SessionManager.artesaoAtual.id
-        ▼
-ProdutoRepository
-        │
-        ▼
-LocalDataStore
-
- */
