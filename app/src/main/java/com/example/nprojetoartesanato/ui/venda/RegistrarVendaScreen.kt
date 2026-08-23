@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.nprojetoartesanato.data.repository.ProdutoRepository
 import com.example.nprojetoartesanato.model.Produto
@@ -41,7 +42,8 @@ import java.util.concurrent.Executors
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun RegistrarVendaScreen(
-    navController: NavController
+    navController: NavController,
+    vendaViewModel: VendaViewModel = viewModel()
 ) {
     val cameraPermissionState = rememberPermissionState(android.Manifest.permission.CAMERA)
     var produtoEncontrado by remember { mutableStateOf<Produto?>(null) }
@@ -160,17 +162,31 @@ fun RegistrarVendaScreen(
                             Text(text = "Preço: R$ %.2f".format(produto.preco))
                             Text(text = "Estoque: ${produto.quantidadeEstoque}")
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text(text = "Deseja registrar a venda deste produto?")
+
+                            if (produto.quantidadeEstoque <= 0) {
+                                Text(
+                                    text = "Produto sem estoque disponível.",
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            } else {
+                                Text(text = "Deseja registrar a venda deste produto?")
+                            }
                         }
                     },
                     confirmButton = {
                         Button(
+                            enabled = produto.quantidadeEstoque > 0,
                             onClick = {
-                                // TODO: registrar a venda de fato (decrementar estoque via
-                                // repository, salvar no histórico). VendaViewModel ainda
-                                // está vazio — esse é o próximo passo a implementar.
+                                val sucesso = vendaViewModel.registrarVenda(produto)
                                 produtoEncontrado = null
                                 leituraEmProcessamento = false
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        if (sucesso) "Venda de \"${produto.nome}\" registrada com sucesso!"
+
+                                        else "Não fui possível registrar a venda. Tente novamente."
+                                    )
+                                }
                             }
                         ) {
                             Text("Registrar Venda")
