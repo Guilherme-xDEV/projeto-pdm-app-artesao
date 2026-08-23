@@ -61,7 +61,7 @@ fun AppNavigation() {
         }
 
         composable(Screens.RegistrarVenda.route) {
-            RegistrarVendaScreen()
+            RegistrarVendaScreen(navController)
         }
 
         composable(Screens.Historico.route) {
