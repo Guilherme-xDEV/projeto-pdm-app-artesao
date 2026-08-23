@@ -24,6 +24,7 @@ class VendaRepository {
         val venda = Venda(
             produto = produtoAtualizado.nome,
             artesao = nomeArtesao,
+            artesaoId = produtoAtualizado.artesaoId,
             vendedor = vendedorNome,
             valor = "R$ %.2f".format(produtoAtualizado.preco),
             dataHora = formato.format(Date())

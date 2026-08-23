@@ -47,6 +47,7 @@ fun DashboardScreen(
 ) {
     val artesao by viewModel.artesaoAtual.collectAsState()
     val produtos by viewModel.produtos.collectAsState()
+    val vendas by viewModel.vendas.collectAsState()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     Scaffold(
@@ -131,7 +132,7 @@ fun DashboardScreen(
                     ) {
                         Text("Vendas")
                         Text(
-                            text = "0",
+                            text = vendas.size.toString(),
                             style = MaterialTheme.typography.headlineMedium
                         )
                     }
