@@ -1,6 +1,7 @@
 package com.example.nprojetoartesanato.ui.venda
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
@@ -33,6 +34,8 @@ import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.concurrent.Executors
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
@@ -42,8 +45,13 @@ fun RegistrarVendaScreen(
 ) {
     val cameraPermissionState = rememberPermissionState(android.Manifest.permission.CAMERA)
     var produtoEncontrado by remember { mutableStateOf<Produto?>(null) }
-    var textoLidoDoQrCode by remember { mutableStateOf<String?>(null) }
+    // Impede múltiplas leituras simultâneas do mesmo frame; é resetada
+    // manualmente (ao cancelar o diálogo) ou automaticamente após uma
+    // leitura que não encontrou produto, para permitir uma nova tentativa.
+    var leituraEmProcessamento by remember { mutableStateOf(false) }
     val repository = remember { ProdutoRepository() }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         if (!cameraPermissionState.status.isGranted) {
@@ -52,6 +60,7 @@ fun RegistrarVendaScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Registrar Venda", fontWeight = FontWeight.Bold) },
@@ -75,22 +84,25 @@ fun RegistrarVendaScreen(
                 CameraPreview(
                     modifier = Modifier.fillMaxSize(),
                     onQrCodeDetected = { conteudo ->
-                        if (textoLidoDoQrCode == null) {
-                            textoLidoDoQrCode = conteudo
+                        if (!leituraEmProcessamento) {
+                            leituraEmProcessamento = true
 
-                            // 1. Tenta buscar pelo ID numérico
-                            val id = conteudo.toLongOrNull()
-                                ?: conteudo.substringAfterLast(":").trim().toLongOrNull()
-
-                            val produto = if (id != null) {
-                                repository.buscarPorId(id)
-                            } else {
-                                // 2. Se o QR Code for um UUID/Texto, busca produto correspondente na lista
-                                repository.listarTodos().find { it.nome.contains(conteudo, ignoreCase = true) }
-                            }
+                            // Produto.qrCodeId é o campo que o QR Code efetivamente carrega
+                            val produto = repository.listarTodos()
+                                .find { it.qrCodeId == conteudo }
 
                             if (produto != null) {
                                 produtoEncontrado = produto
+                                // leituraEmProcessamento continua true enquanto o diálogo
+                                // estiver aberto, para não reabrir o diálogo em cima dele mesmo
+                            } else {
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        "QR Code não corresponde a nenhum produto cadastrado."
+                                    )
+                                    delay(1000) // evita reabrir o snackbar imediatamente com o mesmo código em quadro
+                                    leituraEmProcessamento = false
+                                }
                             }
                         }
                     }
@@ -129,54 +141,52 @@ fun RegistrarVendaScreen(
                 }
             }
 
-            // Exibição do resultado
+            // Diálogo de confirmação exibido assim que um QR Code corresponde a um produto
             produtoEncontrado?.let { produto ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                        .align(Alignment.BottomCenter),
-                    elevation = CardDefaults.cardElevation(8.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
+                AlertDialog(
+                    onDismissRequest = {
+                        produtoEncontrado = null
+                        leituraEmProcessamento = false
+                    },
+                    title = {
                         Text(
-                            text = "Produto Lido!",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                            text = "Produto encontrado",
+                            fontWeight = FontWeight.Bold
                         )
-                        Text(text = "Nome: ${produto.nome}")
-                        Text(text = "Preço: R$ %.2f".format(produto.preco))
-                        Text(text = "Estoque: ${produto.quantidadeEstoque}")
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    },
+                    text = {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(text = "Nome: ${produto.nome}")
+                            Text(text = "Preço: R$ %.2f".format(produto.preco))
+                            Text(text = "Estoque: ${produto.quantidadeEstoque}")
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(text = "Deseja registrar a venda deste produto?")
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                // TODO: registrar a venda de fato (decrementar estoque via
+                                // repository, salvar no histórico). VendaViewModel ainda
+                                // está vazio — esse é o próximo passo a implementar.
+                                produtoEncontrado = null
+                                leituraEmProcessamento = false
+                            }
                         ) {
-                            OutlinedButton(
-                                onClick = {
-                                    produtoEncontrado = null
-                                    textoLidoDoQrCode = null
-                                },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text("Ler Outro")
+                            Text("Registrar Venda")
+                        }
+                    },
+                    dismissButton = {
+                        OutlinedButton(
+                            onClick = {
+                                produtoEncontrado = null
+                                leituraEmProcessamento = false
                             }
-
-                            Button(
-                                onClick = { /* Finalizar Venda */ },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text("Confirmar")
-                            }
+                        ) {
+                            Text("Cancelar")
                         }
                     }
-                }
+                )
             }
         }
     }
@@ -256,16 +266,22 @@ private class QrCodeAnalyzer(
 
             scanner.process(image)
                 .addOnSuccessListener { barcodes ->
+                    Log.d("QrCodeAnalyzer", "Frame processado, ${barcodes.size} código(s) encontrado(s)")
                     for (barcode in barcodes) {
                         barcode.rawValue?.let { value ->
+                            Log.d("QrCodeAnalyzer", "QR lido: $value")
                             onQrCodeScanned(value)
                         }
                     }
+                }
+                .addOnFailureListener { e ->
+                    Log.e("QrCodeAnalyzer", "Falha ao processar imagem", e)
                 }
                 .addOnCompleteListener {
                     imageProxy.close()
                 }
         } else {
+            Log.w("QrCodeAnalyzer", "mediaImage nulo, frame ignorado")
             imageProxy.close()
         }
     }
