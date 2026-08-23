@@ -2,6 +2,7 @@ package com.example.nprojetoartesanato.data.local
 
 import com.example.nprojetoartesanato.model.Artesao
 import com.example.nprojetoartesanato.model.Produto
+import com.example.nprojetoartesanato.model.Venda
 import com.example.nprojetoartesanato.model.dto.AtualizarArtesaoDTO
 import com.example.nprojetoartesanato.model.dto.AtualizarProdutoDTO
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,11 +13,16 @@ object LocalDataStore {
 
     private val _artesaoList = MutableStateFlow<List<Artesao>>(emptyList())
     val artesaoList: StateFlow<List<Artesao>> = _artesaoList.asStateFlow()
+
     private val _produtoList = MutableStateFlow<List<Produto>>(emptyList())
     val produtoList: StateFlow<List<Produto>> = _produtoList.asStateFlow()
 
+    private val _vendaList = MutableStateFlow<List<Venda>>(emptyList())
+    val vendaList: StateFlow<List<Venda>> = _vendaList.asStateFlow()
+
     private var nextArtesaoId = 1L
     private var nextProdutoId = 1L
+    private var nextVendaId = 1L
 
     // Artisan CRUD Methods
     fun adicionarArtesao(
@@ -38,7 +44,7 @@ object LocalDataStore {
 
         return _artesaoList.value.find {
             it.usuario == usuario &&
-            it.senha == senha
+                    it.senha == senha
         }
     }
 
@@ -166,6 +172,45 @@ object LocalDataStore {
         }
 
         return true
+    }
+
+    fun baixarEstoqueProduto(
+        id: Long,
+        quantidade: Int = 1
+    ): Produto? {
+
+        val produtoAtual = buscarProdutoPorId(id) ?: return null
+
+        val produtoAtualizado = produtoAtual.copy(
+            quantidadeEstoque = (produtoAtual.quantidadeEstoque - quantidade).coerceAtLeast(0)
+        )
+
+        _produtoList.value = _produtoList.value.map { produto ->
+            if (produto.id == id) produtoAtualizado else produto
+        }
+
+        return produtoAtualizado
+
+    }
+
+    // Sale crud methods
+    fun adicionarVenda(
+        venda: Venda
+    ): Venda {
+
+        val novaVenda = venda.copy(
+            id = nextVendaId++
+        )
+
+        _vendaList.value += novaVenda
+
+        return novaVenda
+
+    }
+
+    fun listarVendas(): List<Venda>
+    {
+        return _vendaList.value
     }
 
 }
