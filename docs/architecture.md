@@ -1,226 +1,75 @@
-## Folders Architecture (MVVM project pattern)
+# Project Architecture: NProjetoArtesanato
 
-app/
-│
-├── ui/
-│   ├── screens/
-│   ├── components/
-│   └── navigation/
-│
-├── viewmodel/
-│
-├── repository/
-│
-├── network/
-│   ├── dto/
-│   ├── RetrofitInstance.kt
-│   └── ApiService.kt
-│
-├── model/
-│
-└── MainActivity.kt
+This project follows the **MVVM (Model-View-ViewModel)** architectural pattern combined with a **Repository** layer to ensure separation of concerns, testability, and a clean data flow.
 
 ---
 
-## Request Basic Flux
+## 1. Project Structure
 
-User
+The codebase is organized by technical layers and features:
 
-↓
-Screen (UI)
-
-↓
-ViewModel
-
-↓
-Repository
-
-↓
-Network (Retrofit)
-
-↓
-Spring Boot API
-
-↓
-
-Database
+```text
+com.example.nprojetoartesanato/
+├── data/               # Data Layer
+│   ├── local/          # In-memory data source (LocalDataStore)
+│   ├── repository/     # Abstraction between UI and Data (Repositories)
+│   └── session/        # Global session management (SessionManager)
+├── model/              # Domain Layer
+│   ├── dto/            # Data Transfer Objects for updates/creation
+│   └── (Entities)      # Core models: Artesao, Produto, Venda
+├── navigation/         # Navigation configuration and routes
+├── ui/                 # UI Layer (Jetpack Compose)
+│   ├── components/     # Reusable Compose widgets
+│   ├── theme/          # Material 3 Theme configuration
+│   └── [feature]/      # Screens and ViewModels grouped by feature
+└── util/               # Helper classes (e.g., QrCodeGenerator)
+```
 
 ---
 
-## Internal Data Access Flux
+## 2. Layers Responsibility
 
-model
-↓
-representation of the application data
+### UI Layer (View + ViewModel)
+*   **Screens (Compose)**: Declarative UI components that observe state and emit events.
+*   **ViewModels**: Maintain the UI state using `StateFlow` and handle user interactions by calling Repositories. They survive configuration changes.
 
-data
-↓
-origin and data persistence
+### Repository Layer
+*   Acts as a mediator between the ViewModel and the Data Sources.
+*   Encapsulates the logic for fetching and saving data, providing a clean API to the ViewModels.
 
-ui
-↓
-interface and state show to user
+### Data Layer
+*   **LocalDataStore**: Currently serves as the "Single Source of Truth" using in-memory `MutableStateFlow` lists. It simulates a database for local persistence during the app's lifecycle.
+*   **SessionManager**: A specialized singleton that holds the `artesaoAtual` (logged-in artisan) state, shared across the entire application.
 
-navigation
-↓
-flux among functionalities
-
----
-
-## How MVVM will retrieve data using Retrofit and Spring and display it into UI?
-
-1. Example with a 'Venda' object
-
-VendaScreen
-↓
-VendaViewModel
-↓
-VendaRepository
-↓
-VendaApi
-↓
-Retrofit
-↓
-Spring Boot
-
-2. Example with Artesao login
-LoginViewModel
-↓
-ArtesaoRepository
-↓
-Retrofit
-↓
-POST /auth/login
-↓
-Spring Security / Controller
-↓
-PostgreSQL
-
-## Current Application Flux
-
-                    LOGIN
-                      │
-                      ▼
-              LoginViewModel
-                      │
-                      ▼
-             ArtesaoRepository
-                      │
-                      ▼
-              LocalDataStore
-                      │
-                encontrou?
-                  /       \
-                não       sim
-                │          │
-              erro         ▼
-                       SessionManager
-                            │
-                            ▼
-                        Dashboard
-                            │
-             ┌──────────────┼──────────────┐
-             │              │              │
-             ▼              ▼              ▼
-       Cadastrar       Registrar       Histórico
-        Produto          Venda           Vendas
-             │
-             ▼
-    ProdutoViewModel
-             │
-             ▼
-    ProdutoRepository
-             │
-             ▼
-      LocalDataStore
-             │
-             ▼
-      artesaoId = sessão.id
-
-### Or Simply
-Cadastro de Artesão
-↓
-ArtesaoRepository
-↓
-LocalDataStore
-↓
-Login
-↓
-ArtesaoRepository.autenticar()
-↓
-SessionManager
-↓
-Dashboard
-
-### Next Flux
-Dashboard
-↓
-CadastroProdutoScreen
-↓
-CadastroProdutoViewModel
-↓
-ProdutoRepository
-↓
-LocalDataStore
-↓
-Produto
-↓
-artesaoId = SessionManager.artesaoAtual.id
+### Domain Layer (Models)
+*   **Entities**: Data classes representing the core business objects (`Artesao`, `Produto`, `Venda`).
+*   **DTOs**: Lightweight objects used for specific operations like updating a product without passing the entire entity.
 
 ---
 
-### New Product Flux
+## 3. Data Flux & State Management
 
-                  Cadastrar
-                      │
-                      ▼
-             CadastroProdutoViewModel
-                      │
-                      ▼
-          Existe artesão autenticado?
-                 /          \
-               não          sim
-                │            │
-               erro          ▼
-                     Validar campos
-                            │
-                       ┌────┴────┐
-                       │         │
-                    inválido    válido
-                       │         │
-                      erro       ▼
-                         Converter dados
-                               │
-                               ▼
-                            Produto
-                               │
-                     artesaoId = sessão.id
-                               │
-                               ▼
-                    ProdutoRepository
-                               │
-                               ▼
-                        LocalDataStore
+The application leverages **Reactive Programming** with Kotlin Coroutines and StateFlow:
 
-CadastroProdutoScreen
-│
-│ viewModel.cadastrar()
-▼
-CadastroProdutoViewModel
-│
-├── verifica artesão autenticado
-│
-├── valida nome
-├── valida descrição
-├── valida preço
-├── valida estoque
-│
-▼
-Produto
-│
-│ artesaoId = SessionManager.artesaoAtual.id
-▼
-ProdutoRepository
-│
-▼
-LocalDataStore
+1.  **Observation**: ViewModels observe `Flows` from Repositories, which in turn observe the `StateFlow` lists in `LocalDataStore`.
+2.  **Updates**: When a user performs an action (e.g., registering a sale), the ViewModel calls the Repository, which updates the `LocalDataStore`.
+3.  **Reaction**: The update in `LocalDataStore` automatically triggers all observing UIs to recompose with the new data.
+
+### Interaction Example:
+`UI (Event) -> ViewModel -> Repository -> LocalDataStore (State Update) -> Repository (Flow) -> ViewModel (State) -> UI (Recomposition)`
+
+---
+
+## 4. Tech Stack
+
+*   **Language**: Kotlin
+*   **UI Framework**: Jetpack Compose (Material 3)
+*   **Asynchronous Support**: Coroutines & Flow
+*   **Lifecycle**: Android Jetpack ViewModel
+*   **Navigation**: Compose Navigation with Sealed Classes
+*   **Utilities**: ZXing (for QR Code generation)
+
+---
+
+> [!NOTE]
+> While the current implementation uses an in-memory `LocalDataStore`, the architecture is prepared to integrate with external APIs (Retrofit/Spring Boot) or local databases (Room) by simply swapping the implementation within the Repository layer.

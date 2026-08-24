@@ -1,67 +1,89 @@
 ## Application Flux
 ---
 
-### 1. Flux: Artesão Authentication (Login)
+### 1. Flux: Artesão Registration (Cadastro de Artesão)
 
-This flow describes how a user authenticates using their credentials.
+This flow describes how a new artisan registers in the system.
 
-* Actors/Objects: User, LoginScreen (UI), LoginViewModel, ArtesaoRepository, LocalDataStore, SessionManager.
+* **Actors/Objects**: User, CadastroArtesaoScreen, CadastroArtesaoViewModel, ArtesaoRepository, LocalDataStore.
 
-* Step-by-Step Flux:
-```
-i. User enters username and password in LoginScreen.
-ii. LoginScreen updates state in LoginViewModel (via onUsuarioChange / onSenhaChange).
-iii. User clicks the "Login" button.
-iv. LoginScreen calls LoginViewModel.login().
-v. LoginViewModel checks for blank fields.
-vi. LoginViewModel calls ArtesaoRepository.autenticar(user, password).
-vii. ArtesaoRepository calls LocalDataStore.buscarArtesao(user, password).
-viii. LocalDataStore filters its internal artesaoList and returns the Artesao object (or null).
-```
+* **Step-by-Step Flux**:
+    i. User accesses the registration screen from the LoginScreen.
+    ii. User fills in personal and login details (Name, Phone, ID, Username, Password).
+    iii. CadastroArtesaoViewModel validates the fields (none can be blank).
+    iv. User clicks the "Cadastrar" button.
+    v. CadastroArtesaoViewModel instantiates an `Artesao` object.
+    vi. CadastroArtesaoViewModel calls `ArtesaoRepository.cadastrar(artesao)`.
+    vii. `ArtesaoRepository` calls `LocalDataStore.adicionarArtesao(artesao)`.
+    viii. `LocalDataStore` saves the artisan and assigns a unique ID.
+    ix. User is navigated back to the LoginScreen.
 
 ---
 
-### 2. Flux: Product Registration (Cadastro de Produto)
+### 2. Flux: Artesão Authentication (Login)
+
+This flow describes how an artisan authenticates to access the system.
+
+* **Actors/Objects**: User, LoginScreen (UI), LoginViewModel, ArtesaoRepository, SessionManager, LocalDataStore.
+
+* **Step-by-Step Flux**:
+    i. User enters username and password in LoginScreen.
+    ii. LoginScreen updates state in LoginViewModel.
+    iii. User clicks the "Login" button.
+    iv. LoginViewModel calls `ArtesaoRepository.autenticar(user, password)`.
+    v. `ArtesaoRepository` calls `LocalDataStore.buscarArtesao(user, password)`.
+    vi. `LocalDataStore` filters the list and returns the matching `Artesao` (or null).
+    vii. If successful, `ArtesaoRepository` updates `SessionManager.login(artesao)`.
+    viii. `LoginViewModel` triggers navigation to `DashboardScreen`.
+
+---
+
+### 3. Flux: Product Registration (Cadastro de Produto)
 
 This flow covers creating a new product associated with the logged-in artisan.
 
-* Actors/Objects: User, CadastroProdutoScreen, CadastroProdutoViewModel, SessionManager, ProdutoRepository, LocalDataStore.
+* **Actors/Objects**: User, CadastroProdutoScreen, CadastroProdutoViewModel, SessionManager, ProdutoRepository, LocalDataStore.
 
-* Step-by-Step Flux:
-```
-i.User fills out the product form in CadastroProdutoScreen.
-ii.User clicks "Cadastrar".
-iii.CadastroProdutoScreen calls CadastroProdutoViewModel.cadastrar().
-iv.CadastroProdutoViewModel requests the current artisan from SessionManager (artesaoAtual.value).
-v.CadastroProdutoViewModel performs data validation (checks for empty fields and valid number formats).
-vi.CadastroProdutoViewModel generates a new UUID for the qrCodeId.
-vii.CadastroProdutoViewModel instantiates a Produto object, mapping the artesaoId from the session.
-viii.CadastroProdutoViewModel calls ProdutoRepository.cadastrar(produto).
-ix.ProdutoRepository calls LocalDataStore.adicionarProduto(produto).
-x.LocalDataStore assigns an auto-incremented ID and adds the product to the list.
-xi.LocalDataStore updates the produtoList StateFlow, which notifies any observing UIs.
-xii.CadastroProdutoViewModel clears the UI fields and signals success to the Screen.
-```
+* **Step-by-Step Flux**:
+    i. User fills out the product form in CadastroProdutoScreen.
+    ii. User clicks "Cadastrar".
+    iii. `CadastroProdutoViewModel` requests the current artisan from `SessionManager`.
+    iv. `CadastroProdutoViewModel` generates a new UUID for the `qrCodeId`.
+    v. `CadastroProdutoViewModel` instantiates a `Produto` object, mapping the `artesaoId` from the session.
+    vi. `CadastroProdutoViewModel` calls `ProdutoRepository.cadastrar(produto)`.
+    vii. `ProdutoRepository` calls `LocalDataStore.adicionarProduto(produto)`.
+    viii. `LocalDataStore` assigns an ID and adds the product to the list, updating the `produtoList` StateFlow.
+    ix. `CadastroProdutoViewModel` signals success and the UI returns to the Products list.
 
 ---
 
-### 3. Flux: Sales Registration (Registrar Venda - Projected)
-Based on the Venda model and the existing architecture pattern, this is the projected flow for the sales functionality you are currently building.
+### 4. Flux: QR Code Viewing (Visualizar QR Code)
 
-* Actors/Objects: User, RegistrarVendaScreen, VendaViewModel, SessionManager, ProdutoRepository, VendaRepository (to be implemented), LocalDataStore.
+Describes how an artisan views and shares the QR Code for a specific product.
 
-* Step-by-Step Flux:
+* **Actors/Objects**: User, ProdutosScreen, ProdutoQrCodeScreen, ProdutoRepository, QrCodeGenerator.
 
-```
-i.RegistrarVendaScreen requests the list of products for the current artisan via VendaViewModel.
-ii.VendaViewModel calls ProdutoRepository.buscarProdutosDoArtesao(artesaoId).
-iii.User selects a product and enters sales details.
-iv.User confirms the sale.
-v.VendaViewModel creates a Venda object containing product details and timestamps.
-vi.VendaViewModel calls VendaRepository to record the transaction.
-vii.VendaRepository updates LocalDataStore to:
-    ▪Decrement the quantidadeEstoque of the specific Produto.
-    ▪Save the Venda record.
-viii.LocalDataStore emits updated states.
-ix.RegistrarVendaScreen displays a confirmation message.
-```
+* **Step-by-Step Flux**:
+    i. User selects a product from the list in `ProdutosScreen`.
+    ii. Navigation passes the `produtoId` to `ProdutoQrCodeScreen`.
+    iii. `ProdutoQrCodeScreen` fetches product details via `ProdutoRepository`.
+    iv. `ProdutoQrCodeScreen` calls `QrCodeGenerator.generate(qrCodeId)`.
+    v. The resulting Bitmap is displayed on the screen for physical tagging of the craft.
+
+---
+
+### 5. Flux: Sales Registration (Registrar Venda)
+
+Describes the process of recording a sale and updating the inventory.
+
+* **Actors/Objects**: User, RegistrarVendaScreen, VendaViewModel, VendaRepository, SessionManager, ProdutoRepository, LocalDataStore.
+
+* **Step-by-Step Flux**:
+    i. `RegistrarVendaScreen` displays the products available for sale.
+    ii. User selects a product and confirms the sale.
+    iii. `VendaViewModel` calls `vendaRepository.registrarVenda(produto, vendedorNome)`.
+    iv. `VendaRepository` calls `LocalDataStore.baixarEstoqueProduto(produtoId)` to decrement inventory.
+    v. `VendaRepository` creates a `Venda` object with timestamps and artisan details.
+    vi. `VendaRepository` calls `LocalDataStore.adicionarVenda(venda)`.
+    vii. `LocalDataStore` updates its internal lists and emits new states.
+    viii. UI displays a confirmation and updates the dashboard counters.
