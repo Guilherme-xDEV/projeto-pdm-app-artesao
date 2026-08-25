@@ -29,6 +29,8 @@ sequenceDiagram
     Screen-->>User: Retorna para a tela da lista de produtos
 ```
 
+---
+
 ```mermaid
 classDiagram
     direction TB
@@ -169,6 +171,8 @@ classDiagram
     VendaViewModel ..> VendaRepository : usa
     VendaViewModel ..> SessionManager : le vendedorNome
 ```
+
+---
 
 ```mermaid
 graph LR

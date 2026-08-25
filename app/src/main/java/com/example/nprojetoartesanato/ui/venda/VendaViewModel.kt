@@ -27,8 +27,8 @@ class VendaViewModel : ViewModel() {
      * de estoque e adiciona ao histórico). Retorna true se a venda foi
      * registrada com sucesso.
      */
-    fun registrarVenda(produto: Produto): Boolean {
+    fun registrarVenda(produto: Produto, quantidade: Int = 1): Boolean {
         val vendedorNome = SessionManager.artesaoAtual.value?.nome ?: "Desconhecido"
-        return vendaRepository.registrarVenda(produto, vendedorNome) != null
+        return vendaRepository.registrarVenda(produto, vendedorNome, quantidade) != null
     }
 }

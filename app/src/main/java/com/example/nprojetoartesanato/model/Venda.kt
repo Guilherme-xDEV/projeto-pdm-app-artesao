@@ -7,5 +7,6 @@ data class Venda(
     val artesaoId: Long = 0,
     val vendedor: String,
     val valor: String,
+    val quantidade: Int = 1,
     val dataHora: String
 )

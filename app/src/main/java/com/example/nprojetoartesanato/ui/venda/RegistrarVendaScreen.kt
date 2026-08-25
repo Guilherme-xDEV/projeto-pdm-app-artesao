@@ -47,6 +47,7 @@ fun RegistrarVendaScreen(
 ) {
     val cameraPermissionState = rememberPermissionState(android.Manifest.permission.CAMERA)
     var produtoEncontrado by remember { mutableStateOf<Produto?>(null) }
+    var quantidadeSelecionada by remember { mutableIntStateOf(1) }
     // Impede múltiplas leituras simultâneas do mesmo frame; é resetada
     // manualmente (ao cancelar o diálogo) ou automaticamente após uma
     // leitura que não encontrou produto, para permitir uma nova tentativa.
@@ -149,6 +150,7 @@ fun RegistrarVendaScreen(
                     onDismissRequest = {
                         produtoEncontrado = null
                         leituraEmProcessamento = false
+                        quantidadeSelecionada = 1
                     },
                     title = {
                         Text(
@@ -159,7 +161,7 @@ fun RegistrarVendaScreen(
                     text = {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(text = "Nome: ${produto.nome}")
-                            Text(text = "Preço: R$ %.2f".format(produto.preco))
+                            Text(text = "Preço Unitário: R$ %.2f".format(produto.preco))
                             Text(text = "Estoque: ${produto.quantidadeEstoque}")
                             Spacer(modifier = Modifier.height(8.dp))
 
@@ -169,7 +171,29 @@ fun RegistrarVendaScreen(
                                     color = MaterialTheme.colorScheme.error
                                 )
                             } else {
-                                Text(text = "Deseja registrar a venda deste produto?")
+                                Text(text = "Selecione a quantidade:")
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Slider(
+                                        value = quantidadeSelecionada.toFloat(),
+                                        onValueChange = { quantidadeSelecionada = it.toInt() },
+                                        valueRange = 1f..produto.quantidadeEstoque.toFloat(),
+                                        steps = if (produto.quantidadeEstoque > 1) produto.quantidadeEstoque - 2 else 0,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Text(
+                                        text = quantidadeSelecionada.toString(),
+                                        fontWeight = FontWeight.Bold,
+                                        style = MaterialTheme.typography.titleLarge
+                                    )
+                                }
+                                Text(
+                                    text = "Total: R$ %.2f".format(produto.preco * quantidadeSelecionada),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
                             }
                         }
                     },
@@ -177,14 +201,15 @@ fun RegistrarVendaScreen(
                         Button(
                             enabled = produto.quantidadeEstoque > 0,
                             onClick = {
-                                val sucesso = vendaViewModel.registrarVenda(produto)
+                                val sucesso = vendaViewModel.registrarVenda(produto, quantidadeSelecionada)
                                 produtoEncontrado = null
                                 leituraEmProcessamento = false
+                                val qtdVendida = quantidadeSelecionada
+                                quantidadeSelecionada = 1
                                 coroutineScope.launch {
                                     snackbarHostState.showSnackbar(
-                                        if (sucesso) "Venda de \"${produto.nome}\" registrada com sucesso!"
-
-                                        else "Não fui possível registrar a venda. Tente novamente."
+                                        if (sucesso) "Venda de $qtdVendida unidades de \"${produto.nome}\" registrada!"
+                                        else "Não foi possível registrar a venda. Tente novamente."
                                     )
                                 }
                             }
@@ -197,6 +222,7 @@ fun RegistrarVendaScreen(
                             onClick = {
                                 produtoEncontrado = null
                                 leituraEmProcessamento = false
+                                quantidadeSelecionada = 1
                             }
                         ) {
                             Text("Cancelar")

@@ -12,10 +12,11 @@ class VendaRepository {
 
     fun registrarVenda(
         produto: Produto,
-        vendedorNome: String
+        vendedorNome: String,
+        quantidade: Int = 1
     ): Venda? {
 
-        val produtoAtualizado = LocalDataStore.baixarEstoqueProduto(produto.id) ?: return null
+        val produtoAtualizado = LocalDataStore.baixarEstoqueProduto(produto.id, quantidade) ?: return null
 
         val nomeArtesao = LocalDataStore.buscarArtesaoPorId(produto.artesaoId)?.nome ?: "Desconhecido"
 
@@ -26,7 +27,8 @@ class VendaRepository {
             artesao = nomeArtesao,
             artesaoId = produtoAtualizado.artesaoId,
             vendedor = vendedorNome,
-            valor = "R$ %.2f".format(produtoAtualizado.preco),
+            valor = "R$ %.2f".format(produtoAtualizado.preco * quantidade),
+            quantidade = quantidade,
             dataHora = formato.format(Date())
         )
 

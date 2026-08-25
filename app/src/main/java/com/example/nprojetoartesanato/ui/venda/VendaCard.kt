@@ -37,6 +37,10 @@ fun VendaCard(
             )
 
             Text(
+                text = "Quantidade: ${venda.quantidade}"
+            )
+
+            Text(
                 text = venda.valor,
                 style = MaterialTheme.typography.titleSmall
             )
