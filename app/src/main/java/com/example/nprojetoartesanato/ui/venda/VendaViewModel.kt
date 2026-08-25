@@ -2,17 +2,20 @@ package com.example.nprojetoartesanato.ui.venda
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.nprojetoartesanato.data.repository.ProdutoRepository
 import com.example.nprojetoartesanato.data.repository.VendaRepository
 import com.example.nprojetoartesanato.data.session.SessionManager
 import com.example.nprojetoartesanato.model.Produto
 import com.example.nprojetoartesanato.model.Venda
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 
 class VendaViewModel : ViewModel() {
 
     private val vendaRepository = VendaRepository()
+    private val produtoRepository = ProdutoRepository()
 
     val vendas: StateFlow<List<Venda>> =
         vendaRepository.observarTodas()
@@ -21,6 +24,15 @@ class VendaViewModel : ViewModel() {
                 started = SharingStarted.WhileSubscribed(5000),
                 initialValue = emptyList()
             )
+
+    val produtosDisponiveis: StateFlow<List<Produto>> =
+        flow {
+            emit(produtoRepository.listarTodos())
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
     /**
      * Registra a venda de [produto] em nome do artesão logado (dá baixa
