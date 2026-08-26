@@ -31,6 +31,9 @@ class CadastroProdutoViewModel : ViewModel() {
     var cadastroRealizado by mutableStateOf(false)
         private set
 
+    var ultimoProdutoCadastrado by mutableStateOf<Pair<String, String>?>(null)
+        private set
+
     fun atualizarNome(valor: String) {
         nome = valor
     }
@@ -127,6 +130,7 @@ class CadastroProdutoViewModel : ViewModel() {
 
         //6. Persist through repository
         produtoRepository.cadastrar(produto)
+        ultimoProdutoCadastrado = Pair(produto.nome, produto.qrCodeId)
         cadastroRealizado = true
         limparformulario()
         return true
