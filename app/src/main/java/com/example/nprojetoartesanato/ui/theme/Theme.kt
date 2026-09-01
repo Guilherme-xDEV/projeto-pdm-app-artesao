@@ -41,8 +41,8 @@ private val LightColorScheme = lightColorScheme(
 @Composable
 fun NProjetoArtesanatoTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    // Dynamic color is disabled by default to keep the Craft/Tauá identity
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

@@ -1,9 +1,11 @@
 package com.example.nprojetoartesanato.ui.dashboard
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,43 +15,50 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddBox
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Inventory
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCodeScanner
-import androidx.compose.material.icons.filled.Sell
-import androidx.compose.material.icons.filled.Store
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.ElevatedCard
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.nprojetoartesanato.navigation.Screens
 import com.example.nprojetoartesanato.ui.theme.NProjetoArtesanatoTheme
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,186 +69,220 @@ fun DashboardScreen(
     val artesao by viewModel.artesaoAtual.collectAsState()
     val produtos by viewModel.produtos.collectAsState()
     val vendas by viewModel.vendas.collectAsState()
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    val isSalesVisible by viewModel.isSalesVisible.collectAsState()
+
+    var showHelpDialog by remember { mutableStateOf(false) }
+
+    // Cálculo do total de vendas
+    val totalVendas = vendas.sumOf { 
+        (it.valor.toDoubleOrNull() ?: 0.0) * it.quantidade 
+    }
+
+    if (showHelpDialog) {
+        HelpDialog(onDismiss = { showHelpDialog = false })
+    }
 
     Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        "Centro de Artesanato",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = 1.sp
-                        )
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surface
-                ),
-                scrollBehavior = scrollBehavior
-            )
-        }
+        containerColor = MaterialTheme.colorScheme.primary
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+                .verticalScroll(rememberScrollState())
         ) {
-            // Header Section
-            WelcomeHeader(artesaoNome = artesao?.nome ?: "Artesão")
-
+            // Parte Superior (Cabeçalho Estilo Nubank)
             Column(
                 modifier = Modifier
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp)
+                    .fillMaxWidth()
+                    .padding(24.dp)
             ) {
-                // Stats Section
+                // Top Bar: Avatar e Ícones
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    StatCard(
-                        title = "Produtos",
-                        value = produtos.size.toString(),
-                        icon = Icons.Default.Inventory,
-                        modifier = Modifier.weight(1f),
-                        onClick = { navController.navigate(Screens.Produtos.route) }
-                    )
-
-                    StatCard(
-                        title = "Vendas",
-                        value = vendas.size.toString(),
-                        icon = Icons.Default.Sell,
-                        modifier = Modifier.weight(1f),
-                        onClick = { /* Navegar para vendas se houver rota */ }
-                    )
-                }
-
-                // Quick Actions Section
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        text = "Ações Rápidas",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    // Avatar Clicável (Esquerda)
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp) // Aumentado um pouco para visibilidade
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.2f))
+                            .clickable { navController.navigate(Screens.Perfil.route) },
+                        contentAlignment = Alignment.Center
                     ) {
-                        DashboardActionCard(
-                            title = "Novo Produto",
-                            icon = Icons.Default.AddBox,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            navController.navigate(Screens.CadastroProduto.route)
-                        }
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Perfil",
+                            tint = Color.White,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
 
-                        DashboardActionCard(
-                            title = "Registrar Venda",
-                            icon = Icons.Default.QrCodeScanner,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            navController.navigate(Screens.RegistrarVenda.route)
+                    // Ações (Direita)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        IconButton(onClick = { viewModel.toggleSalesVisibility() }) {
+                            Icon(
+                                imageVector = if (isSalesVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                contentDescription = if (isSalesVisible) "Ocultar Saldo" else "Mostrar Saldo",
+                                tint = Color.White
+                            )
                         }
-
-                        DashboardActionCard(
-                            title = "Histórico",
-                            icon = Icons.Default.History,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            navController.navigate(Screens.Historico.route)
+                        IconButton(onClick = { showHelpDialog = true }) {
+                            Icon(Icons.AutoMirrored.Filled.HelpOutline, contentDescription = "Ajuda", tint = Color.White)
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(32.dp))
 
+                // Saudação
                 Text(
-                    text = "Centro de Artesanato de Tauá • Argila Vermelha",
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline
+                    text = "Olá, ${artesao?.nome ?: "Artesão"}",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
-            }
-        }
-    }
-}
 
-@Composable
-fun WelcomeHeader(artesaoNome: String) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        color = MaterialTheme.colorScheme.primaryContainer,
-        shape = RoundedCornerShape(24.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(24.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.primary),
-                contentAlignment = Alignment.Center
+                // "Saldo" ou Valor em Vendas
+                Column {
+                    Text(
+                        text = "Vendas Realizadas",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White.copy(alpha = 0.8f)
+                    )
+                    Text(
+                        text = if (isSalesVisible) "R$ ${String.format(Locale.ROOT, "%.2f", totalVendas)}" else "R$ •••••",
+                        style = MaterialTheme.typography.headlineLarge.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White
+                        )
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // Botões Rápidos (Pílulas)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    QuickActionPill(
+                        label = "Nova Venda",
+                        icon = Icons.Default.QrCodeScanner,
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Screens.RegistrarVenda.route) }
+                    )
+                    QuickActionPill(
+                        label = "Novo Produto",
+                        icon = Icons.Default.Add,
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Screens.CadastroProduto.route) }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Parte Inferior (Grade de Serviços)
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Store,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(32.dp)
-                )
-            }
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                ) {
+                    Text(
+                        text = "Serviços e Gestão",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                    )
 
-            Spacer(modifier = Modifier.width(16.dp))
+                    // Grid de 2x2 ou 2 colunas
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            ServiceItem(
+                                title = "Meus Produtos",
+                                icon = Icons.Default.Inventory,
+                                count = produtos.size.toString(),
+                                modifier = Modifier.weight(1f),
+                                onClick = { navController.navigate(Screens.Produtos.route) }
+                            )
+                            ServiceItem(
+                                title = "Histórico",
+                                icon = Icons.Default.History,
+                                count = vendas.size.toString(),
+                                modifier = Modifier.weight(1f),
+                                onClick = { navController.navigate(Screens.Historico.route) }
+                            )
+                        }
+                    }
 
-            Column {
-                Text(
-                    text = "Olá, $artesaoNome!",
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-                Text(
-                    text = "Pronto para criar hoje?",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "Centro de Artesanato de Tauá\nArgila Vermelha • Artesanato Vivo",
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline,
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-fun StatCard(
-    title: String,
-    value: String,
+fun QuickActionPill(
+    label: String,
     icon: ImageVector,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    ElevatedCard(
-        modifier = modifier,
+    Button(
         onClick = onClick,
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+        modifier = modifier,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color.White.copy(alpha = 0.2f),
+            contentColor = Color.White
+        ),
+        shape = RoundedCornerShape(20.dp),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp)
+    ) {
+        Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(20.dp))
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(text = label, style = MaterialTheme.typography.labelLarge)
+    }
+}
+
+@Composable
+fun ServiceItem(
+    title: String,
+    icon: ImageVector,
+    count: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = modifier.clickable(onClick = onClick),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+        shape = RoundedCornerShape(16.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Icon(
                 imageVector = icon,
@@ -247,17 +290,56 @@ fun StatCard(
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(24.dp)
             )
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = value,
-                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
-            )
             Text(
                 text = title,
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+            )
+            Text(
+                text = "$count itens",
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.outline
             )
         }
+    }
+}
+
+@Composable
+fun HelpDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Guia do Dashboard", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                HelpItem("Avatar (Topo Esquerdo)", "Acesse seu perfil para editar dados ou sair da conta.")
+                HelpItem("Olho (Topo Direito)", "Clique para ocultar ou mostrar o valor total das suas vendas.")
+                HelpItem("Nova Venda", "Abra a câmera para escanear o QR Code de um produto e realizar uma venda.")
+                HelpItem("Novo Produto", "Cadastre novos itens no seu estoque.")
+                HelpItem("Serviços", "Veja a lista completa de produtos e o histórico detalhado de vendas.")
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Entendi", color = MaterialTheme.colorScheme.primary)
+            }
+        },
+        shape = RoundedCornerShape(24.dp)
+    )
+}
+
+@Composable
+fun HelpItem(title: String, description: String) {
+    Column {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = description,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 

@@ -27,8 +27,15 @@ class DashboardViewModel : ViewModel() {
     private val _vendas = MutableStateFlow<List<Venda>>(emptyList())
     val vendas: StateFlow<List<Venda>> = _vendas.asStateFlow()
 
+    private val _isSalesVisible = MutableStateFlow(true)
+    val isSalesVisible: StateFlow<Boolean> = _isSalesVisible.asStateFlow()
+
     init {
         observarDados()
+    }
+
+    fun toggleSalesVisibility() {
+        _isSalesVisible.value = !_isSalesVisible.value
     }
 
     private fun observarDados() {
