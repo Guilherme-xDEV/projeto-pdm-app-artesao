@@ -9,6 +9,7 @@ import androidx.navigation.navArgument
 import com.example.nprojetoartesanato.ui.cadastroArtesao.CadastroArtesaoScreen
 import com.example.nprojetoartesanato.ui.dashboard.DashboardScreen
 import com.example.nprojetoartesanato.ui.login.LoginScreen
+import com.example.nprojetoartesanato.ui.perfil.ProfileScreen
 import com.example.nprojetoartesanato.ui.produto.CadastroProdutoScreen
 import com.example.nprojetoartesanato.ui.produto.ProdutoQrCodeScreen
 import com.example.nprojetoartesanato.ui.produto.ProdutosScreen
@@ -26,6 +27,7 @@ sealed class Screens(val route: String) {
     object RegistrarVenda : Screens("registrar_venda")
     object Historico : Screens("historico")
     object CadastroArtesao : Screens("cadastro_artesao")
+    object Perfil : Screens("perfil")
 }
 
 @Composable
@@ -70,6 +72,10 @@ fun AppNavigation() {
 
         composable(Screens.CadastroArtesao.route) {
             CadastroArtesaoScreen(navController)
+        }
+
+        composable(Screens.Perfil.route) {
+            ProfileScreen(navController)
         }
     }
 }

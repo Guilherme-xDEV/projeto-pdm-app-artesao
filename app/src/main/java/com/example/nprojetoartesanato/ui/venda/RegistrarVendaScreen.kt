@@ -9,10 +9,14 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -48,6 +52,11 @@ fun RegistrarVendaScreen(
     val cameraPermissionState = rememberPermissionState(android.Manifest.permission.CAMERA)
     var produtoEncontrado by remember { mutableStateOf<Produto?>(null) }
     var quantidadeSelecionada by remember { mutableIntStateOf(1) }
+    var showManualSearch by remember { mutableStateOf(false) }
+    var filtroTexto by remember { mutableStateOf("") }
+    val produtosDisponiveis by vendaViewModel.produtosDisponiveis.collectAsState()
+    val bottomSheetState = rememberModalBottomSheetState()
+    
     // Impede múltiplas leituras simultâneas do mesmo frame; é resetada
     // manualmente (ao cancelar o diálogo) ou automaticamente após uma
     // leitura que não encontrou produto, para permitir uma nova tentativa.
@@ -127,6 +136,35 @@ fun RegistrarVendaScreen(
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 48.dp)
                 )
+
+                // Botão para busca manual
+                Button(
+                    onClick = { showManualSearch = true },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f),
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    ),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    shape = RoundedCornerShape(24.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "Busca manual",
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
 
             } else if (!cameraPermissionState.status.isGranted) {
                 Column(
@@ -229,6 +267,73 @@ fun RegistrarVendaScreen(
                         }
                     }
                 )
+            }
+
+            // Bottom Sheet para busca manual de produtos
+            if (showManualSearch) {
+                ModalBottomSheet(
+                    onDismissRequest = { showManualSearch = false },
+                    sheetState = bottomSheetState
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .padding(bottom = 32.dp)
+                    ) {
+                        Text(
+                            text = "Selecionar Produto",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+
+                        OutlinedTextField(
+                            value = filtroTexto,
+                            onValueChange = { filtroTexto = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = { Text("Digite o nome do produto...") },
+                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                            singleLine = true
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        val produtosFiltrados = produtosDisponiveis.filter {
+                            it.nome.contains(filtroTexto, ignoreCase = true)
+                        }
+
+                        if (produtosFiltrados.isEmpty()) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(200.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("Nenhum produto encontrado.")
+                            }
+                        } else {
+                            LazyColumn(
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.heightIn(max = 400.dp)
+                            ) {
+                                items(produtosFiltrados) { produto ->
+                                    ListItem(
+                                        headlineContent = { Text(produto.nome) },
+                                        supportingContent = { Text("Estoque: ${produto.quantidadeEstoque}") },
+                                        trailingContent = { Text("R$ %.2f".format(produto.preco)) },
+                                        modifier = Modifier.clickable {
+                                            produtoEncontrado = produto
+                                            showManualSearch = false
+                                            filtroTexto = ""
+                                        }
+                                    )
+                                    HorizontalDivider(modifier = Modifier.padding(horizontal = 8.dp))
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
