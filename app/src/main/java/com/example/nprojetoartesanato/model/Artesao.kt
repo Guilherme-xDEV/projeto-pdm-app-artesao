@@ -5,6 +5,6 @@ data class Artesao(
     val nome: String,
     val telefone: String,
     val identificacao: String,
-    val usuario: String, // <-- authentication modeling will have this removed later.
+    val email: String,
     val senha: String
 )

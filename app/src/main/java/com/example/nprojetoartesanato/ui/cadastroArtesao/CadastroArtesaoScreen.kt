@@ -63,9 +63,9 @@ fun CadastroArtesaoScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         TextField(
-            value = viewModel.usuario,
-            onValueChange = viewModel::atualizarUsuario,
-            label = { Text("Usuário") },
+            value = viewModel.email,
+            onValueChange = viewModel::atualizarEmail,
+            label = { Text("E-mail") },
             modifier = Modifier.fillMaxWidth()
         )
 

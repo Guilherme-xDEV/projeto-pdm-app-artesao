@@ -11,7 +11,7 @@ class LoginViewModel : ViewModel() {
 
     //private val repository = ArtesaoRepository()
 
-    var usuario by mutableStateOf("")
+    var email by mutableStateOf("")
         private set
 
     var senha by mutableStateOf("")
@@ -20,16 +20,16 @@ class LoginViewModel : ViewModel() {
     var erro by mutableStateOf<String?>(null)
         private set
 
-//    fun atualizarUsuario(valor: String) {
-//        usuario = valor
+//    fun atualizarEmail(valor: String) {
+//        email = valor
 //    }
 //
 //    fun atualizarSenha(valor: String) {
 //        senha = valor
 //    }
 
-    fun onUsuarioChange(newValue: String) {
-        usuario = newValue
+    fun onEmailChange(newValue: String) {
+        email = newValue
     }
 
     fun onSenhaChange(newValue: String) {
@@ -38,7 +38,7 @@ class LoginViewModel : ViewModel() {
 
     fun login(): Boolean {
 
-        if (usuario.isBlank() || senha.isBlank()) {
+        if (email.isBlank() || senha.isBlank()) {
 
             erro = "Usuário e senha são obrigatórios."
 
@@ -46,7 +46,7 @@ class LoginViewModel : ViewModel() {
         }
 
         val artesao = ArtesaoRepository.autenticar(
-            usuario = usuario,
+            email = email,
             senha = senha
         )
 

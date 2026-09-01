@@ -38,12 +38,12 @@ object LocalDataStore {
     }
 
     fun buscarArtesao(
-        usuario: String,
+        email: String,
         senha: String
     ): Artesao? {
 
         return _artesaoList.value.find {
-            it.usuario == usuario &&
+            it.email == email &&
                     it.senha == senha
         }
     }

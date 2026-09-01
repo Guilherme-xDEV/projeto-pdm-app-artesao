@@ -18,7 +18,7 @@ class CadastroArtesaoViewModel : ViewModel() {
     var identificacao by mutableStateOf("")
         private set
 
-    var usuario by mutableStateOf("")
+    var email by mutableStateOf("")
         private set
 
     var senha by mutableStateOf("")
@@ -39,8 +39,8 @@ class CadastroArtesaoViewModel : ViewModel() {
         identificacao = valor
     }
 
-    fun atualizarUsuario(valor: String) {
-        usuario = valor
+    fun atualizarEmail(valor: String) {
+        email = valor
     }
 
     fun atualizarSenha(valor: String) {
@@ -53,7 +53,7 @@ class CadastroArtesaoViewModel : ViewModel() {
             nome.isBlank() ||
             telefone.isBlank() ||
             identificacao.isBlank() ||
-            usuario.isBlank() ||
+            email.isBlank() ||
             senha.isBlank()
         ) {
             erro = "Todos os campos são obrigatórios."
@@ -65,7 +65,7 @@ class CadastroArtesaoViewModel : ViewModel() {
             nome = nome,
             telefone = telefone,
             identificacao = identificacao,
-            usuario = usuario,
+            email = email,
             senha = senha
         )
 

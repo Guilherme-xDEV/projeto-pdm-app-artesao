@@ -42,7 +42,7 @@ fun LoginScreen(
     navController: NavController,
     viewModel: LoginViewModel = viewModel()
 ) {
-    val usuario = viewModel.usuario
+    val email = viewModel.email
     val senha = viewModel.senha
     val erro = viewModel.erro
 
@@ -111,10 +111,10 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 OutlinedTextField(
-                    value = usuario,
-                    onValueChange = { viewModel.onUsuarioChange(it) },
+                    value = email,
+                    onValueChange = { viewModel.onEmailChange(it) },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Usuário") },
+                    label = { Text("E-mail") },
                     singleLine = true
                 )
 

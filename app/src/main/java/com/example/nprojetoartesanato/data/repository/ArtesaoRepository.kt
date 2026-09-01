@@ -14,12 +14,12 @@ object ArtesaoRepository {
     }
 
     fun autenticar(
-        usuario: String,
+        email: String,
         senha: String
     ): Artesao? {
 
         return LocalDataStore.buscarArtesao(
-            usuario = usuario,
+            email = email,
             senha = senha
         )
     }
