@@ -26,23 +26,3 @@ object SessionManager {
         _token = null
     }
 }
-
-/*
-
-Now we have an explicit concept:
-
-SessionManager
-       ↓
-artsaoCurrent
-
-When Maria logs in:
-
-SessionManager.startSessao(maria)
-
-The application now knows:
-
-Authenticated artesao:
-
-Maria
-id = 1
- */
