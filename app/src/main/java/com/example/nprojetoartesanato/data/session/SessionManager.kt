@@ -13,33 +13,16 @@ object SessionManager {
     val artesaoAtual: StateFlow<Artesao?> =
         _artesaoAtual.asStateFlow()
 
-    fun iniciarSessao(artesao: Artesao) {
+    private var _token: String? = null
+    val token: String? get() = _token
 
+    fun iniciarSessao(artesao: Artesao, token: String? = null) {
         _artesaoAtual.value = artesao
+        _token = token
     }
 
     fun encerrarSessao() {
-
         _artesaoAtual.value = null
+        _token = null
     }
 }
-
-/*
-
-Now we have an explicit concept:
-
-SessionManager
-       ↓
-artsaoCurrent
-
-When Maria logs in:
-
-SessionManager.startSessao(maria)
-
-The application now knows:
-
-Authenticated artesao:
-
-Maria
-id = 1
- */
