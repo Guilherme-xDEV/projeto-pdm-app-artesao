@@ -13,14 +13,17 @@ object SessionManager {
     val artesaoAtual: StateFlow<Artesao?> =
         _artesaoAtual.asStateFlow()
 
-    fun iniciarSessao(artesao: Artesao) {
+    private var _token: String? = null
+    val token: String? get() = _token
 
+    fun iniciarSessao(artesao: Artesao, token: String? = null) {
         _artesaoAtual.value = artesao
+        _token = token
     }
 
     fun encerrarSessao() {
-
         _artesaoAtual.value = null
+        _token = null
     }
 }
 
