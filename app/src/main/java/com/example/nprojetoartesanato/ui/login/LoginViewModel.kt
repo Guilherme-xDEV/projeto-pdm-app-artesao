@@ -4,12 +4,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.nprojetoartesanato.data.repository.ArtesaoRepository
 import com.example.nprojetoartesanato.data.session.SessionManager
+import kotlinx.coroutines.launch
 
 class LoginViewModel : ViewModel() {
-
-    //private val repository = ArtesaoRepository()
 
     var email by mutableStateOf("")
         private set
@@ -17,16 +17,11 @@ class LoginViewModel : ViewModel() {
     var senha by mutableStateOf("")
         private set
 
-    var erro by mutableStateOf<String?>(null)
+    var isLoading by mutableStateOf(false)
         private set
 
-//    fun atualizarEmail(valor: String) {
-//        email = valor
-//    }
-//
-//    fun atualizarSenha(valor: String) {
-//        senha = valor
-//    }
+    var erro by mutableStateOf<String?>(null)
+        private set
 
     fun onEmailChange(newValue: String) {
         email = newValue
@@ -36,48 +31,34 @@ class LoginViewModel : ViewModel() {
         senha = newValue
     }
 
-    fun login(): Boolean {
-
+    fun login(onSuccess: () -> Unit) {
         if (email.isBlank() || senha.isBlank()) {
-
-            erro = "Usuário e senha são obrigatórios."
-
-            return false
+            erro = "E-mail e senha são obrigatórios."
+            return
         }
 
-        val artesao = ArtesaoRepository.autenticar(
-            email = email,
-            senha = senha
-        )
-
-        if (artesao == null) {
-
-            erro = "Usuário ou senha inválidos."
-
-            return false
-        }
-
-        SessionManager.iniciarSessao(artesao)
-
+        isLoading = true
         erro = null
 
-        return true
+        viewModelScope.launch {
+            // First, try remote login
+            val remoteSuccess = ArtesaoRepository.loginRemote(email, senha)
+            
+            if (remoteSuccess) {
+                isLoading = false
+                onSuccess()
+            } else {
+                // Fallback to local login for development/offline
+                val artesao = ArtesaoRepository.autenticar(email, senha)
+                isLoading = false
+                
+                if (artesao != null) {
+                    SessionManager.iniciarSessao(artesao)
+                    onSuccess()
+                } else {
+                    erro = "E-mail ou senha inválidos."
+                }
+            }
+        }
     }
 }
-
-/*
-
-Current situation:
-
-val artesao = ArtesaoRepository.autenticar(...) searches in memory but later we can use
-the same method to:
-
-repository.autenticar()
-       ↓
-Retrofit
-       ↓
-POST /auth/login
-       ↓
-Spring Boot
-
- */

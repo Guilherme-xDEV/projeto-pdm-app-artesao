@@ -4,8 +4,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.nprojetoartesanato.data.network.dto.ArtesaoCreateDTO
 import com.example.nprojetoartesanato.data.repository.ArtesaoRepository
 import com.example.nprojetoartesanato.model.Artesao
+import kotlinx.coroutines.launch
 
 class CadastroArtesaoViewModel : ViewModel() {
 
@@ -22,6 +25,9 @@ class CadastroArtesaoViewModel : ViewModel() {
         private set
 
     var senha by mutableStateOf("")
+        private set
+
+    var isLoading by mutableStateOf(false)
         private set
 
     var erro by mutableStateOf<String?>(null)
@@ -47,8 +53,7 @@ class CadastroArtesaoViewModel : ViewModel() {
         senha = valor
     }
 
-    fun cadastrar(): Boolean {
-
+    fun cadastrar(onSuccess: () -> Unit) {
         if (
             nome.isBlank() ||
             telefone.isBlank() ||
@@ -57,38 +62,28 @@ class CadastroArtesaoViewModel : ViewModel() {
             senha.isBlank()
         ) {
             erro = "Todos os campos são obrigatórios."
-            return false
+            return
         }
 
-        val artesao = Artesao(
-            id = 0,
-            nome = nome,
-            telefone = telefone,
-            identificacao = identificacao,
-            email = email,
-            senha = senha
-        )
-
-        ArtesaoRepository.cadastrar(artesao)
-
+        isLoading = true
         erro = null
 
-        return true
+        viewModelScope.launch {
+            val dto = ArtesaoCreateDTO(nome, telefone, identificacao, email, senha)
+            
+            // Try remote signup
+            val remoteSuccess = ArtesaoRepository.signupRemote(dto)
+            
+            if (remoteSuccess) {
+                isLoading = false
+                onSuccess()
+            } else {
+                // For now, even if remote fails, we add locally for testing
+                val artesao = Artesao(0, nome, telefone, identificacao, email, senha)
+                ArtesaoRepository.cadastrar(artesao)
+                isLoading = false
+                onSuccess()
+            }
+        }
     }
 }
-
-/*
-Since this project has no Repository yet, this ViewModel class will be used to
-control the state of the form submitted by the created 'Artesao' when he enters
-data at the 'CadastroArtesaoScreen'. Think of this as a non-persistent database.
-
-CadastroArtesaoScreen
-        ↓
-ViewModel
-        ↓
-repository.cadastrar()
-        ↓
-LocalDataStore
-        ↓
-artesão armazenado
- */
