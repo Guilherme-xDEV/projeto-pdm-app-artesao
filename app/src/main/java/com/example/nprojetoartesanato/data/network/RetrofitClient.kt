@@ -32,8 +32,5 @@ object RetrofitClient {
         .build()
 
     val authApiService: AuthApiService = retrofit.create(AuthApiService::class.java)
-
-    //TODO
-    // Add other services here as they are created
-    // val produtoApiService: ProdutoApiService = retrofit.create(ProdutoApiService::class.java)
+    val produtoApiService: ProdutoApiService = retrofit.create(ProdutoApiService::class.java)
 }
