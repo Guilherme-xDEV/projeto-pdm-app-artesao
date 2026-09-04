@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class ProfileViewModel : ViewModel() {
+class ProfileViewModel(private val repository: ArtesaoRepository) : ViewModel() {
 
     private val _artesao = MutableStateFlow<Artesao?>(null)
     val artesao: StateFlow<Artesao?> = _artesao.asStateFlow()
@@ -38,7 +38,7 @@ class ProfileViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.value = ProfileUiState.Loading
             val dto = AtualizarArtesaoDTO(nome = nome, telefone = telefone)
-            val atualizado = ArtesaoRepository.atualizar(currentArtesao.id, dto)
+            val atualizado = repository.atualizar(currentArtesao.id, dto)
             
             if (atualizado != null) {
                 SessionManager.iniciarSessao(atualizado)

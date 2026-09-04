@@ -10,7 +10,7 @@ import com.example.nprojetoartesanato.data.repository.ArtesaoRepository
 import com.example.nprojetoartesanato.model.Artesao
 import kotlinx.coroutines.launch
 
-class CadastroArtesaoViewModel : ViewModel() {
+class CadastroArtesaoViewModel(private val repository: ArtesaoRepository) : ViewModel() {
 
     var nome by mutableStateOf("")
         private set
@@ -72,7 +72,7 @@ class CadastroArtesaoViewModel : ViewModel() {
             val dto = ArtesaoCreateDTO(nome, telefone, identificacao, email, senha)
             
             // Try remote signup
-            val remoteSuccess = ArtesaoRepository.signupRemote(dto)
+            val remoteSuccess = repository.signupRemote(dto)
             
             if (remoteSuccess) {
                 isLoading = false
@@ -80,7 +80,7 @@ class CadastroArtesaoViewModel : ViewModel() {
             } else {
                 // For now, even if remote fails, we add locally for testing
                 val artesao = Artesao(0, nome, telefone, identificacao, email, senha)
-                ArtesaoRepository.cadastrar(artesao)
+                repository.cadastrar(artesao)
                 isLoading = false
                 onSuccess()
             }

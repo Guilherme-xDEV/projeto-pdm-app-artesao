@@ -12,9 +12,7 @@ import com.example.nprojetoartesanato.model.Produto
 import kotlinx.coroutines.launch
 import java.util.UUID
 
-class CadastroProdutoViewModel : ViewModel() {
-
-    private val produtoRepository = ProdutoRepository()
+class CadastroProdutoViewModel(private val produtoRepository: ProdutoRepository) : ViewModel() {
 
     var nome by mutableStateOf("")
         private set
