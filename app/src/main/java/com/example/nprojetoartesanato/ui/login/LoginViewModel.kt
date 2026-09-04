@@ -9,7 +9,7 @@ import com.example.nprojetoartesanato.data.repository.ArtesaoRepository
 import com.example.nprojetoartesanato.data.session.SessionManager
 import kotlinx.coroutines.launch
 
-class LoginViewModel : ViewModel() {
+class LoginViewModel(private val repository: ArtesaoRepository) : ViewModel() {
 
     var email by mutableStateOf("")
         private set
@@ -42,14 +42,14 @@ class LoginViewModel : ViewModel() {
 
         viewModelScope.launch {
             // First, try remote login
-            val remoteSuccess = ArtesaoRepository.loginRemote(email, senha)
+            val remoteSuccess = repository.loginRemote(email, senha)
             
             if (remoteSuccess) {
                 isLoading = false
                 onSuccess()
             } else {
                 // Fallback to local login for development/offline
-                val artesao = ArtesaoRepository.autenticar(email, senha)
+                val artesao = repository.autenticar(email, senha)
                 isLoading = false
                 
                 if (artesao != null) {

@@ -13,10 +13,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
-class DashboardViewModel : ViewModel() {
-
-    private val produtoRepository = ProdutoRepository()
-    private val vendaRepository = VendaRepository()
+class DashboardViewModel(
+    private val produtoRepository: ProdutoRepository,
+    private val vendaRepository: VendaRepository
+) : ViewModel() {
 
     val artesaoAtual =
         SessionManager.artesaoAtual

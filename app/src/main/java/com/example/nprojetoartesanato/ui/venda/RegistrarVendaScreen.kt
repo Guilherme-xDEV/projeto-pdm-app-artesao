@@ -61,7 +61,6 @@ fun RegistrarVendaScreen(
     // manualmente (ao cancelar o diálogo) ou automaticamente após uma
     // leitura que não encontrou produto, para permitir uma nova tentativa.
     var leituraEmProcessamento by remember { mutableStateOf(false) }
-    val repository = remember { ProdutoRepository() }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
@@ -99,16 +98,15 @@ fun RegistrarVendaScreen(
                         if (!leituraEmProcessamento) {
                             leituraEmProcessamento = true
 
-                            // Produto.qrCodeId é o campo que o QR Code efetivamente carrega
-                            val produto = repository.listarTodos()
-                                .find { it.qrCodeId == conteudo }
+                            coroutineScope.launch {
+                                // Produto.qrCodeId é o campo que o QR Code efetivamente carrega
+                                val produto = vendaViewModel.buscarPorQrCode(conteudo)
 
-                            if (produto != null) {
-                                produtoEncontrado = produto
-                                // leituraEmProcessamento continua true enquanto o diálogo
-                                // estiver aberto, para não reabrir o diálogo em cima dele mesmo
-                            } else {
-                                coroutineScope.launch {
+                                if (produto != null) {
+                                    produtoEncontrado = produto
+                                    // leituraEmProcessamento continua true enquanto o diálogo
+                                    // estiver aberto, para não reabrir o diálogo em cima dele mesmo
+                                } else {
                                     snackbarHostState.showSnackbar(
                                         "QR Code não corresponde a nenhum produto cadastrado."
                                     )

@@ -11,9 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class ProdutosViewModel : ViewModel() {
-
-    private val produtoRepository = ProdutoRepository()
+class ProdutosViewModel(private val produtoRepository: ProdutoRepository) : ViewModel() {
 
     private val _produtos = MutableStateFlow<List<Produto>>(emptyList())
     val produtos: StateFlow<List<Produto>> = _produtos.asStateFlow()
