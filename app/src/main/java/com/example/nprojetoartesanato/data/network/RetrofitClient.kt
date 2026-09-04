@@ -8,7 +8,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
 
-    private const val BASE_URL = "http://000.000.0.0:8080/" // Substitute IP to access localhost
+    private const val BASE_URL = "http://192.168.0.8:8080/" // Substitute IP to access localhost
 
     private val logging = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
@@ -32,8 +32,6 @@ object RetrofitClient {
         .build()
 
     val authApiService: AuthApiService = retrofit.create(AuthApiService::class.java)
-
-    //TODO
-    // Add other services here as they are created
-    // val produtoApiService: ProdutoApiService = retrofit.create(ProdutoApiService::class.java)
+    val produtoApiService: ProdutoApiService = retrofit.create(ProdutoApiService::class.java)
+    val vendaApiService: VendaApiService = retrofit.create(VendaApiService::class.java)
 }

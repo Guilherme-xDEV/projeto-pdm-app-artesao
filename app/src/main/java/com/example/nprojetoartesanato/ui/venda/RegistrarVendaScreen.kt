@@ -239,12 +239,12 @@ fun RegistrarVendaScreen(
                         Button(
                             enabled = produto.quantidadeEstoque > 0,
                             onClick = {
-                                val sucesso = vendaViewModel.registrarVenda(produto, quantidadeSelecionada)
-                                produtoEncontrado = null
-                                leituraEmProcessamento = false
-                                val qtdVendida = quantidadeSelecionada
-                                quantidadeSelecionada = 1
                                 coroutineScope.launch {
+                                    val sucesso = vendaViewModel.registrarVenda(produto, quantidadeSelecionada)
+                                    produtoEncontrado = null
+                                    leituraEmProcessamento = false
+                                    val qtdVendida = quantidadeSelecionada
+                                    quantidadeSelecionada = 1
                                     snackbarHostState.showSnackbar(
                                         if (sucesso) "Venda de $qtdVendida unidades de \"${produto.nome}\" registrada!"
                                         else "Não foi possível registrar a venda. Tente novamente."

@@ -174,6 +174,11 @@ object LocalDataStore {
         return true
     }
 
+    fun substituirProdutosPorArtesao(artesaoId: Long, novosProdutos: List<Produto>) { // this method is useful to fetch remote info from the DB.
+        val outrosProdutos = _produtoList.value.filter { it.artesaoId != artesaoId }
+        _produtoList.value = outrosProdutos + novosProdutos
+    }
+
     fun baixarEstoqueProduto(
         id: Long,
         quantidade: Int = 1
@@ -213,8 +218,8 @@ object LocalDataStore {
         return _vendaList.value
     }
 
-}
+    fun substituirVendas(novasVendas: List<Venda>) {
+        _vendaList.value = novasVendas
+    }
 
-/*
-During runtime this object will store the data as a temporary database
- */
+}
