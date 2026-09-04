@@ -1,16 +1,23 @@
 package com.example.nprojetoartesanato.data.repository
 
-import com.example.nprojetoartesanato.data.local.LocalDataStore
+import com.example.nprojetoartesanato.data.local.dao.VendaDao
+import com.example.nprojetoartesanato.data.local.dao.ProdutoDao
+import com.example.nprojetoartesanato.data.local.entities.toDomain
+import com.example.nprojetoartesanato.data.local.entities.toEntity
 import com.example.nprojetoartesanato.data.network.RetrofitClient
 import com.example.nprojetoartesanato.data.network.dto.VendaRequest
 import com.example.nprojetoartesanato.model.Produto
 import com.example.nprojetoartesanato.model.Venda
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class VendaRepository {
+class VendaRepository(
+    private val vendaDao: VendaDao,
+    private val produtoDao: ProdutoDao
+) {
 
     private val apiService = RetrofitClient.vendaApiService
 
@@ -33,9 +40,16 @@ class VendaRepository {
                         dataHora = body.dataHora
                     )
                     
-                    // Atualiza estoque local para refletir a venda imediatamente
-                    LocalDataStore.baixarEstoqueProduto(produtoId, quantidade)
-                    LocalDataStore.adicionarVenda(venda)
+                    // Update stock locally
+                    val produtoEntity = produtoDao.getById(produtoId)
+                    if (produtoEntity != null) {
+                        val updated = produtoEntity.copy(
+                            quantidadeEstoque = (produtoEntity.quantidadeEstoque - quantidade).coerceAtLeast(0)
+                        )
+                        produtoDao.update(updated)
+                    }
+                    
+                    vendaDao.insert(venda.toEntity())
                     venda
                 } else null
             } else null
@@ -62,7 +76,8 @@ class VendaRepository {
                     )
                 } ?: emptyList()
                 
-                LocalDataStore.substituirVendas(remoteList)
+                vendaDao.deleteAll()
+                vendaDao.insertAll(remoteList.map { it.toEntity() })
                 remoteList
             } else emptyList()
         } catch (e: Exception) {
@@ -70,36 +85,38 @@ class VendaRepository {
         }
     }
 
-    fun registrarVenda(
+    suspend fun registrarVenda(
         produto: Produto,
         vendedorNome: String,
         quantidade: Int = 1
     ): Venda? {
-
-        val produtoAtualizado = LocalDataStore.baixarEstoqueProduto(produto.id, quantidade) ?: return null
-
-        val nomeArtesao = LocalDataStore.buscarArtesaoPorId(produto.artesaoId)?.nome ?: "Desconhecido"
+        // Local only fallback (mostly unused now but kept for consistency)
+        val entity = produtoDao.getById(produto.id) ?: return null
+        val updated = entity.copy(
+            quantidadeEstoque = (entity.quantidadeEstoque - quantidade).coerceAtLeast(0)
+        )
+        produtoDao.update(updated)
 
         val formato = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("pt", "BR"))
 
         val venda = Venda(
-            produto = produtoAtualizado.nome,
-            artesao = nomeArtesao,
-            artesaoId = produtoAtualizado.artesaoId,
+            id = 0, // Local only
+            produto = updated.nome,
+            artesao = "Local",
+            artesaoId = updated.artesaoId,
             vendedor = vendedorNome,
-            valor = "R$ %.2f".format(produtoAtualizado.preco * quantidade),
+            valor = "R$ %.2f".format(updated.preco * quantidade),
             quantidade = quantidade,
             dataHora = formato.format(Date())
         )
 
-        return LocalDataStore.adicionarVenda(venda)
-    }
-
-    fun listarTodas(): List<Venda> {
-        return LocalDataStore.listarVendas()
+        vendaDao.insert(venda.toEntity())
+        return venda
     }
 
     fun observarTodas(): Flow<List<Venda>> {
-        return LocalDataStore.vendaList
+        return vendaDao.getAll().map { entities ->
+            entities.map { it.toDomain() }
+        }
     }
 }
