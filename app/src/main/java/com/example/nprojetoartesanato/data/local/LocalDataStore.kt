@@ -218,4 +218,8 @@ object LocalDataStore {
         return _vendaList.value
     }
 
+    fun substituirVendas(novasVendas: List<Venda>) {
+        _vendaList.value = novasVendas
+    }
+
 }
