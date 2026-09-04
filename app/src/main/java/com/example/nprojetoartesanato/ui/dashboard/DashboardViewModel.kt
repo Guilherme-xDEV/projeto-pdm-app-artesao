@@ -32,10 +32,18 @@ class DashboardViewModel : ViewModel() {
 
     init {
         observarDados()
+        refreshDados()
     }
 
     fun toggleSalesVisibility() {
         _isSalesVisible.value = !_isSalesVisible.value
+    }
+
+    fun refreshDados() {
+        viewModelScope.launch {
+            produtoRepository.listarMeusProdutosRemote()
+            vendaRepository.sincronizarHistoricoRemote()
+        }
     }
 
     private fun observarDados() {

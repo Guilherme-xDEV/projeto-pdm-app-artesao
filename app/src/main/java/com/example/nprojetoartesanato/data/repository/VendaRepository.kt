@@ -20,11 +20,13 @@ class VendaRepository {
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
+                    val artesaoId = com.example.nprojetoartesanato.data.session.SessionManager.artesaoAtual.value?.id ?: 0
+                    
                     val venda = Venda(
                         id = body.id,
                         produto = body.produtoNome,
                         artesao = body.artesaoNome,
-                        artesaoId = 0, // Não retornado diretamente no DTO simplificado, mas o app usa para filtragem local se necessário
+                        artesaoId = artesaoId,
                         vendedor = body.vendedorNome,
                         valor = "R$ %.2f".format(body.valorTotal),
                         quantidade = body.quantidade,
@@ -46,12 +48,13 @@ class VendaRepository {
         return try {
             val response = apiService.listarMinhasVendas()
             if (response.isSuccessful) {
+                val artesaoId = com.example.nprojetoartesanato.data.session.SessionManager.artesaoAtual.value?.id ?: 0
                 val remoteList = response.body()?.map { body ->
                     Venda(
                         id = body.id,
                         produto = body.produtoNome,
                         artesao = body.artesaoNome,
-                        artesaoId = 0,
+                        artesaoId = artesaoId,
                         vendedor = body.vendedorNome,
                         valor = "R$ %.2f".format(body.valorTotal),
                         quantidade = body.quantidade,
