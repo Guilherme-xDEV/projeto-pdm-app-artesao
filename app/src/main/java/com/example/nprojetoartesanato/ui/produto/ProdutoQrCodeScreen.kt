@@ -30,6 +30,9 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -39,8 +42,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.nprojetoartesanato.data.repository.ProdutoRepository
 import com.example.nprojetoartesanato.util.QrCodeGenerator
 import com.example.nprojetoartesanato.util.QrCodeUtils
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -52,7 +55,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun ProdutoQrCodeScreen(
     navController: NavController,
-    produtoId: Long
+    produtoId: Long,
+    viewModel: ProdutoQrCodeViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
@@ -62,13 +66,13 @@ fun ProdutoQrCodeScreen(
         android.Manifest.permission.WRITE_EXTERNAL_STORAGE
     )
 
-    val repository = remember {
-        ProdutoRepository()
+    val produto by viewModel.produto.collectAsState()
+
+    LaunchedEffect(produtoId) {
+        viewModel.carregarProduto(produtoId)
     }
 
-    val produto = remember(produtoId) {
-        repository.buscarPorId(produtoId) // <-- move this to a ProdutoQrCodeViewModel later
-    }
+    val currentProduto = produto
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -92,7 +96,7 @@ fun ProdutoQrCodeScreen(
         }
     ) { padding ->
 
-        if (produto == null) {
+        if (currentProduto == null) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -111,9 +115,9 @@ fun ProdutoQrCodeScreen(
                 QrCodeGenerator()
             }
 
-            val qrCodeBitmap = remember(produto.qrCodeId) {
+            val qrCodeBitmap = remember(currentProduto.qrCodeId) {
                 generator.generate(
-                    content = produto.qrCodeId
+                    content = currentProduto.qrCodeId
                 )
             }
 
@@ -135,7 +139,7 @@ fun ProdutoQrCodeScreen(
                 ) {
                     Image(
                         bitmap = qrCodeBitmap.asImageBitmap(),
-                        contentDescription = "QR Code de ${produto.nome}",
+                        contentDescription = "QR Code de ${currentProduto.nome}",
                         modifier = Modifier
                             .size(280.dp)
                             .padding(16.dp)
@@ -143,7 +147,7 @@ fun ProdutoQrCodeScreen(
                 }
 
                 Text(
-                    text = produto.nome,
+                    text = currentProduto.nome,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center
@@ -152,7 +156,7 @@ fun ProdutoQrCodeScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = produto.descricao,
+                    text = currentProduto.descricao,
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -179,7 +183,7 @@ fun ProdutoQrCodeScreen(
                                 style = MaterialTheme.typography.labelMedium
                             )
                             Text(
-                                text = "R$ %.2f".format(produto.preco),
+                                text = "R$ %.2f".format(currentProduto.preco),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -202,7 +206,7 @@ fun ProdutoQrCodeScreen(
                                 style = MaterialTheme.typography.labelMedium
                             )
                             Text(
-                                text = "${produto.quantidadeEstoque} un.",
+                                text = "${currentProduto.quantidadeEstoque} un.",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer
@@ -216,7 +220,7 @@ fun ProdutoQrCodeScreen(
                 Button(
                     onClick = {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q || writePermissionState.status.isGranted) {
-                            val uri = QrCodeUtils.salvarBitmapNaGaleria(context, qrCodeBitmap, produto.nome)
+                            val uri = QrCodeUtils.salvarBitmapNaGaleria(context, qrCodeBitmap, currentProduto.nome)
                             coroutineScope.launch {
                                 snackbarHostState.showSnackbar(
                                     if (uri != null) "QR Code salvo na galeria!"
@@ -245,7 +249,7 @@ fun ProdutoQrCodeScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Text(
-                    text = "ID: ${produto.qrCodeId}",
+                    text = "ID: ${currentProduto.qrCodeId}",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.outline
                 )
