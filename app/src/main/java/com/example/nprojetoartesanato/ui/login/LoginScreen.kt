@@ -56,7 +56,11 @@ fun LoginScreen(
             R.drawable.img3,
             R.drawable.img5,
             R.drawable.img6,
-            R.drawable.img7
+            R.drawable.img7,
+            R.drawable.img8_test,
+            R.drawable.img9_test,
+            R.drawable.img11_t,
+            R.drawable.img13_test
         )
     }
     val randomImage = remember { backgroundImages.random() }
