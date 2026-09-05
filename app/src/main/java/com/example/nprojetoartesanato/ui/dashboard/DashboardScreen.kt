@@ -75,7 +75,7 @@ fun DashboardScreen(
 
     // Cálculo do total de vendas
     val totalVendas = vendas.sumOf { 
-        (it.valor.toDoubleOrNull() ?: 0.0) * it.quantidade 
+        (it.valor.replace("R$", "").replace(",", ".").trim().toDoubleOrNull() ?: 0.0) 
     }
 
     if (showHelpDialog) {

@@ -83,7 +83,7 @@ fun AppNavigation() {
         }
 
         composable(Screens.Historico.route) {
-            HistoricoVendasScreen(viewModel(factory = factory))
+            HistoricoVendasScreen(navController, viewModel(factory = factory))
         }
 
         composable(Screens.CadastroArtesao.route) {
