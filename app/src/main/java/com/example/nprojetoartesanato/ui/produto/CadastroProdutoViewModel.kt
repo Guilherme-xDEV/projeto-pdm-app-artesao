@@ -4,14 +4,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.nprojetoartesanato.data.network.dto.ProdutoCreateDTO
 import com.example.nprojetoartesanato.data.repository.ProdutoRepository
 import com.example.nprojetoartesanato.data.session.SessionManager
 import com.example.nprojetoartesanato.model.Produto
+import kotlinx.coroutines.launch
 import java.util.UUID
 
-class CadastroProdutoViewModel : ViewModel() {
-
-    private val produtoRepository = ProdutoRepository()
+class CadastroProdutoViewModel(private val produtoRepository: ProdutoRepository) : ViewModel() {
 
     var nome by mutableStateOf("")
         private set
@@ -23,6 +24,9 @@ class CadastroProdutoViewModel : ViewModel() {
         private set
 
     var quantidadeEstoque by mutableStateOf("")
+        private set
+
+    var isLoading by mutableStateOf(false)
         private set
 
     var erro by mutableStateOf<String?>(null)
@@ -50,90 +54,68 @@ class CadastroProdutoViewModel : ViewModel() {
         quantidadeEstoque = valor
     }
 
-    fun cadastrar(): Boolean {
+    fun cadastrar() {
 
         erro = null
         cadastroRealizado = false
 
         //1. Verify if there is a logged user
-
-        var artesao = SessionManager.artesaoAtual.value
+        val artesao = SessionManager.artesaoAtual.value
 
         if (artesao == null) {
-            erro = "Nemhum artesão está autenticado."
-            return false
+            erro = "Nenhum artesão está autenticado."
+            return
         }
 
         //2. Validate fields
 
-        if (nome.isBlank()) {
-            erro = "Informe o nome do produto."
-            return false
-        }
-
-        if (descricao.isBlank()) {
-            erro = "Informe a descrição do produto."
-            return false
-        }
-
-        if (preco.isBlank()) {
-            erro = "Informe o preço do produto."
-            return false
-        }
-
-        if (quantidadeEstoque.isBlank()) {
-            erro = "Informe a quantidade em estoque."
-            return false
+        if (nome.isBlank() || descricao.isBlank() || preco.isBlank() || quantidadeEstoque.isBlank()) {
+            erro = "Todos os campos são obrigatórios."
+            return
         }
 
         //3. Convert price
-        val precoConvertido = preco
+        val precoDouble = preco
             .replace(",", ".")
             .toDoubleOrNull()
 
-        if (precoConvertido == null) {
+        if (precoDouble == null || precoDouble <= 0) {
             erro = "Informe um preço válido."
-            return false
-        }
-
-        if (precoConvertido <= 0) {
-            erro = "O preço deve ser maior que zero."
-            return false
+            return
         }
 
         // 4. Convert stock
-        val quantidadeConvertida =
+        val quantidadeInt =
             quantidadeEstoque.toIntOrNull()
 
-        if (quantidadeConvertida == null) {
+        if (quantidadeInt == null || quantidadeInt < 0) {
             erro = "Informe uma quantidade válida."
-            return false
+            return
         }
 
-        if (quantidadeConvertida < 0) {
-            erro = "A quantidade em estoque não pode ser negativa."
-            return false
+        isLoading = true
+
+        viewModelScope.launch {
+            val qrCodeId = UUID.randomUUID().toString()
+            val dto = ProdutoCreateDTO(
+                nome = nome.trim(),
+                descricao = descricao.trim(),
+                preco = precoDouble,
+                quantidadeEstoque = quantidadeInt,
+                qrCodeId = qrCodeId
+            )
+
+            val produto = produtoRepository.cadastrarRemote(dto)
+            
+            isLoading = false
+            if (produto != null) {
+                ultimoProdutoCadastrado = Pair(produto.nome, produto.qrCodeId)
+                cadastroRealizado = true
+                limparformulario()
+            } else {
+                erro = "Erro ao cadastrar produto no servidor."
+            }
         }
-
-        val qrCodeId = UUID.randomUUID().toString()
-
-        //5. Create product
-        val produto = Produto(
-            id = 0,
-            nome = nome.trim(),
-            descricao = descricao.trim(),
-            preco = precoConvertido,
-            quantidadeEstoque = quantidadeConvertida,
-            artesaoId = artesao.id, // <-- this represents the association
-            qrCodeId = qrCodeId
-        )
-
-        //6. Persist through repository
-        produtoRepository.cadastrar(produto)
-        ultimoProdutoCadastrado = Pair(produto.nome, produto.qrCodeId)
-        cadastroRealizado = true
-        limparformulario()
-        return true
     }
 
     private fun limparformulario() {

@@ -13,10 +13,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
-class DashboardViewModel : ViewModel() {
-
-    private val produtoRepository = ProdutoRepository()
-    private val vendaRepository = VendaRepository()
+class DashboardViewModel(
+    private val produtoRepository: ProdutoRepository,
+    private val vendaRepository: VendaRepository
+) : ViewModel() {
 
     val artesaoAtual =
         SessionManager.artesaoAtual
@@ -32,10 +32,18 @@ class DashboardViewModel : ViewModel() {
 
     init {
         observarDados()
+        refreshDados()
     }
 
     fun toggleSalesVisibility() {
         _isSalesVisible.value = !_isSalesVisible.value
+    }
+
+    fun refreshDados() {
+        viewModelScope.launch {
+            produtoRepository.listarMeusProdutosRemote()
+            vendaRepository.sincronizarHistoricoRemote()
+        }
     }
 
     private fun observarDados() {

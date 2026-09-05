@@ -7,7 +7,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -63,9 +66,9 @@ fun CadastroArtesaoScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         TextField(
-            value = viewModel.usuario,
-            onValueChange = viewModel::atualizarUsuario,
-            label = { Text("Usuário") },
+            value = viewModel.email,
+            onValueChange = viewModel::atualizarEmail,
+            label = { Text("E-mail") },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -90,9 +93,7 @@ fun CadastroArtesaoScreen(
 
         Button(
             onClick = {
-                val sucesso = viewModel.cadastrar()
-
-                if (sucesso) {
+                viewModel.cadastrar {
                     navController.navigate(Screens.Login.route) {
                         popUpTo(Screens.CadastroArtesao.route) {
                             inclusive = true
@@ -100,9 +101,18 @@ fun CadastroArtesaoScreen(
                     }
                 }
             },
+            enabled = !viewModel.isLoading,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Cadastrar")
+            if (viewModel.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text("Cadastrar")
+            }
         }
 
         Spacer(modifier = Modifier.height(8.dp))

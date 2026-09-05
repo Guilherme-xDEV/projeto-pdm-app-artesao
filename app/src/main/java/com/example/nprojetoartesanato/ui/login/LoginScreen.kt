@@ -9,9 +9,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -42,9 +44,10 @@ fun LoginScreen(
     navController: NavController,
     viewModel: LoginViewModel = viewModel()
 ) {
-    val usuario = viewModel.usuario
+    val email = viewModel.email
     val senha = viewModel.senha
     val erro = viewModel.erro
+    val isLoading = viewModel.isLoading
 
     // Random selection of background image
     val backgroundImages = remember {
@@ -115,10 +118,10 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 OutlinedTextField(
-                    value = usuario,
-                    onValueChange = { viewModel.onUsuarioChange(it) },
+                    value = email,
+                    onValueChange = { viewModel.onEmailChange(it) },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Usuário") },
+                    label = { Text("E-mail") },
                     singleLine = true
                 )
 
@@ -146,16 +149,24 @@ fun LoginScreen(
 
                 Button(
                     modifier = Modifier.fillMaxWidth(),
+                    enabled = !isLoading,
                     onClick = {
-
-                        val sucesso = viewModel.login()
-
-                        if (sucesso) {
-                            navController.navigate(Screens.Dashboard.route)
+                        viewModel.login {
+                            navController.navigate(Screens.Dashboard.route) {
+                                popUpTo(Screens.Login.route) { inclusive = true }
+                            }
                         }
                     }
                 ) {
-                    Text("Entrar")
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("Entrar")
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))

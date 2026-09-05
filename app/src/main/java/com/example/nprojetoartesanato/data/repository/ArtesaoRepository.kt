@@ -1,49 +1,86 @@
 package com.example.nprojetoartesanato.data.repository
 
-import com.example.nprojetoartesanato.data.local.LocalDataStore
+import com.example.nprojetoartesanato.data.local.dao.ArtesaoDao
+import com.example.nprojetoartesanato.data.local.entities.toDomain
+import com.example.nprojetoartesanato.data.local.entities.toEntity
 import com.example.nprojetoartesanato.model.Artesao
 import com.example.nprojetoartesanato.model.dto.AtualizarArtesaoDTO
-import kotlinx.coroutines.flow.StateFlow
+import com.example.nprojetoartesanato.data.network.RetrofitClient
+import com.example.nprojetoartesanato.data.network.dto.ArtesaoCreateDTO
+import com.example.nprojetoartesanato.data.network.dto.LoginRequest
+import com.example.nprojetoartesanato.data.session.SessionManager
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
-object ArtesaoRepository {
+class ArtesaoRepository(private val artesaoDao: ArtesaoDao) {
 
-    val artesaoList: StateFlow<List<Artesao>> = LocalDataStore.artesaoList
-    fun cadastrar(artesao: Artesao): Artesao {
+    private val authService = RetrofitClient.authApiService
 
-        return LocalDataStore.adicionarArtesao(artesao)
+    val artesaoList: Flow<List<Artesao>> = artesaoDao.getAll().map { entities ->
+        entities.map { it.toDomain() }
     }
 
-    fun autenticar(
-        usuario: String,
-        senha: String
-    ): Artesao? {
-
-        return LocalDataStore.buscarArtesao(
-            usuario = usuario,
-            senha = senha
-        )
+    suspend fun signupRemote(dto: ArtesaoCreateDTO): Boolean {
+        return try {
+            val response = authService.signup(dto)
+            response.isSuccessful
+        } catch (e: Exception) {
+            false
+        }
     }
 
-    fun buscarPorId(id: Long): Artesao? {
-
-        return LocalDataStore.buscarArtesaoPorId(id)
+    suspend fun loginRemote(email: String, senha: String): Boolean {
+        return try {
+            val response = authService.login(LoginRequest(email, senha))
+            if (response.isSuccessful) {
+                val authResponse = response.body()
+                if (authResponse != null) {
+                    val artesao = Artesao(
+                        id = authResponse.artesaoId,
+                        nome = authResponse.nome,
+                        email = email,
+                        telefone = "",
+                        identificacao = "",
+                        senha = ""
+                    )
+                    // Persist locally
+                    artesaoDao.insert(artesao.toEntity())
+                    SessionManager.iniciarSessao(artesao, authResponse.token)
+                    return true
+                }
+            }
+            false
+        } catch (e: Exception) {
+            false
+        }
     }
 
-    fun listarTodos(): List<Artesao> {
-
-        return LocalDataStore.listarArtesaos()
+    suspend fun cadastrar(artesao: Artesao): Artesao {
+        artesaoDao.insert(artesao.toEntity())
+        return artesao
     }
 
-    fun atualizar(
+    suspend fun autenticar(email: String, senha: String): Artesao? {
+        val entity = artesaoDao.getByEmail(email)
+        return if (entity != null && entity.senha == senha) entity.toDomain() else null
+    }
+
+    suspend fun buscarPorId(id: Long): Artesao? {
+        return artesaoDao.getById(id)?.toDomain()
+    }
+
+    suspend fun atualizar(
         id: Long,
         dados: AtualizarArtesaoDTO
     ): Artesao? {
-
-        return LocalDataStore.atualizarArtesao(id, dados)
+        val entity = artesaoDao.getById(id) ?: return null
+        val updated = entity.copy(nome = dados.nome, telefone = dados.telefone)
+        artesaoDao.update(updated)
+        return updated.toDomain()
     }
 
-    fun excluir(id: Long): Boolean {
-
-        return LocalDataStore.excluirArtesao(id)
+    suspend fun excluir(id: Long): Boolean {
+        artesaoDao.deleteById(id)
+        return true
     }
 }
