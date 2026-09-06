@@ -1,54 +1,80 @@
 package com.example.nprojetoartesanato.ui.venda
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.nprojetoartesanato.model.Venda
 
 @Composable
-fun VendaCard(
-    venda: Venda
-) {
-    ElevatedCard(
-        modifier = Modifier.fillMaxWidth()
+fun VendaCard(venda: Venda) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+        shape = RoundedCornerShape(16.dp),
+        border = CardDefaults.outlinedCardBorder()
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = venda.produto,
-                style = MaterialTheme.typography.titleMedium
-            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = venda.produto,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp
+                    )
+                )
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "${venda.quantidade} un.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = " • ",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                    Text(
+                        text = venda.dataHora,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Text(
+                    text = "Vendido por: ${venda.vendedor}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
+            }
 
-            Text(
-                text = "Artesão: ${venda.artesao}"
-            )
-
-            Text(
-                text = "Vendedor: ${venda.vendedor}"
-            )
-
-            Text(
-                text = "Quantidade: ${venda.quantidade}"
-            )
-
-            Text(
-                text = venda.valor,
-                style = MaterialTheme.typography.titleSmall
-            )
-
-            Text(
-                text = venda.dataHora,
-                style = MaterialTheme.typography.bodySmall
-            )
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = venda.valor,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                )
+            }
         }
     }
 }
