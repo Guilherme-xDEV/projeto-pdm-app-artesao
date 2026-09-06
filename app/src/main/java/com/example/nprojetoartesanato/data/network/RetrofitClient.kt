@@ -8,7 +8,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
 
-    private const val BASE_URL = "http://192.168.0.8:8080/" // Substitute IP to access localhost
+    private const val BASE_URL = "https://projeto-pdm-artesao-api-production.up.railway.app/"
 
     private val logging = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
