@@ -7,5 +7,6 @@ data class Produto(
     val preco: Double,
     val quantidadeEstoque: Int,
     val artesaoId: Long,
-    val qrCodeId: String
+    val qrCodeId: String,
+    val ativo: Boolean = true
 )

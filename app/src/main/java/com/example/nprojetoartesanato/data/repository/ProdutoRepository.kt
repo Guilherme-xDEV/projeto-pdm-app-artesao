@@ -95,7 +95,8 @@ class ProdutoRepository(private val produtoDao: ProdutoDao) {
             preco = response.preco,
             quantidadeEstoque = response.quantidadeEstoque,
             artesaoId = response.artesaoId,
-            qrCodeId = response.qrCodeId
+            qrCodeId = response.qrCodeId,
+            ativo = response.ativo
         )
     }
 

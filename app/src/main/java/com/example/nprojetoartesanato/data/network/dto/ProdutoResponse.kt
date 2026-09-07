@@ -7,5 +7,6 @@ data class ProdutoResponse(
     val preco: Double,
     val quantidadeEstoque: Int,
     val qrCodeId: String,
-    val artesaoId: Long
+    val artesaoId: Long,
+    val ativo: Boolean
 )

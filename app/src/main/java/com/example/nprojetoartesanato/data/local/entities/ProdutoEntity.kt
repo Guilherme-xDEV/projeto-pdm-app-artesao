@@ -12,7 +12,8 @@ data class ProdutoEntity(
     val preco: Double,
     val quantidadeEstoque: Int,
     val artesaoId: Long,
-    val qrCodeId: String
+    val qrCodeId: String,
+    val ativo: Boolean = true
 )
 
 fun ProdutoEntity.toDomain() = Produto(
@@ -22,7 +23,8 @@ fun ProdutoEntity.toDomain() = Produto(
     preco = preco,
     quantidadeEstoque = quantidadeEstoque,
     artesaoId = artesaoId,
-    qrCodeId = qrCodeId
+    qrCodeId = qrCodeId,
+    ativo = ativo
 )
 
 fun Produto.toEntity() = ProdutoEntity(
@@ -32,5 +34,6 @@ fun Produto.toEntity() = ProdutoEntity(
     preco = preco,
     quantidadeEstoque = quantidadeEstoque,
     artesaoId = artesaoId,
-    qrCodeId = qrCodeId
+    qrCodeId = qrCodeId,
+    ativo = ativo
 )
