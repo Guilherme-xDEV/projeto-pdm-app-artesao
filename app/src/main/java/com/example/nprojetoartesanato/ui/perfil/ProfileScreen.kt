@@ -131,17 +131,6 @@ fun ProfileScreen(
                 shape = RoundedCornerShape(12.dp)
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedTextField(
-                value = artesao?.identificacao ?: "",
-                onValueChange = {},
-                label = { Text("Identificação (CPF/CNPJ)") },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = false,
-                shape = RoundedCornerShape(12.dp)
-            )
-
             Spacer(modifier = Modifier.weight(1f))
             Spacer(modifier = Modifier.height(40.dp))
 

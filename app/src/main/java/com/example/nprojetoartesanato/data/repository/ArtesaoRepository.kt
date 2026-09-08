@@ -40,7 +40,6 @@ class ArtesaoRepository(private val artesaoDao: ArtesaoDao) {
                         nome = authResponse.nome,
                         email = email,
                         telefone = "",
-                        identificacao = "",
                         senha = ""
                     )
                     // Persist locally
