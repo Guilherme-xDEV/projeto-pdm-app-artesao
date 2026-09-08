@@ -18,9 +18,6 @@ class CadastroArtesaoViewModel(private val repository: ArtesaoRepository) : View
     var telefone by mutableStateOf("")
         private set
 
-    var identificacao by mutableStateOf("")
-        private set
-
     var email by mutableStateOf("")
         private set
 
@@ -41,10 +38,6 @@ class CadastroArtesaoViewModel(private val repository: ArtesaoRepository) : View
         telefone = valor
     }
 
-    fun atualizarIdentificacao(valor: String) {
-        identificacao = valor
-    }
-
     fun atualizarEmail(valor: String) {
         email = valor
     }
@@ -57,7 +50,6 @@ class CadastroArtesaoViewModel(private val repository: ArtesaoRepository) : View
         if (
             nome.isBlank() ||
             telefone.isBlank() ||
-            identificacao.isBlank() ||
             email.isBlank() ||
             senha.isBlank()
         ) {
@@ -69,7 +61,7 @@ class CadastroArtesaoViewModel(private val repository: ArtesaoRepository) : View
         erro = null
 
         viewModelScope.launch {
-            val dto = ArtesaoCreateDTO(nome, telefone, identificacao, email, senha)
+            val dto = ArtesaoCreateDTO(nome, telefone, email, senha)
             
             // Try remote signup
             val remoteSuccess = repository.signupRemote(dto)
@@ -79,7 +71,7 @@ class CadastroArtesaoViewModel(private val repository: ArtesaoRepository) : View
                 onSuccess()
             } else {
                 // For now, even if remote fails, we add locally for testing
-                val artesao = Artesao(0, nome, telefone, identificacao, email, senha)
+                val artesao = Artesao(0, nome, telefone, email, senha)
                 repository.cadastrar(artesao)
                 isLoading = false
                 onSuccess()
