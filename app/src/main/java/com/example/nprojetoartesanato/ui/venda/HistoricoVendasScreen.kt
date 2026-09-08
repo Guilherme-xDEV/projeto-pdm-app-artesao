@@ -164,7 +164,8 @@ fun SalesChart(data: List<Pair<String, Int>>) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(100.dp),
+                    .height(100.dp)
+                    .padding(horizontal = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Bottom
             ) {
@@ -175,7 +176,7 @@ fun SalesChart(data: List<Pair<String, Int>>) {
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.weight(1f)
                     ) {
-                        val barHeight = (count.toFloat() / maxSales) * 70
+                        val barHeight = if (count > 0) (count.toFloat() / maxSales) * 70 else 2f
                         
                         Box(
                             modifier = Modifier
@@ -183,12 +184,17 @@ fun SalesChart(data: List<Pair<String, Int>>) {
                                 .height(barHeight.dp)
                                 .background(
                                     color = if (count > 0) MaterialTheme.colorScheme.primary 
-                                           else MaterialTheme.colorScheme.outlineVariant,
+                                           else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
                                     shape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)
                                 )
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = day, style = MaterialTheme.typography.labelSmall, fontSize = 8.sp)
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = day, 
+                            style = MaterialTheme.typography.labelSmall, 
+                            fontSize = 9.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }

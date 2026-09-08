@@ -24,27 +24,41 @@ class VendaViewModel(
     private val produtoRepository: ProdutoRepository
 ) : ViewModel() {
 
-    private val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR"))
-
+    @OptIn(ExperimentalCoroutinesApi::class)
     val vendas: StateFlow<List<Venda>> =
-        vendaRepository.observarTodas()
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000),
-                initialValue = emptyList()
-            )
+        SessionManager.artesaoAtual.flatMapLatest { artesao ->
+            if (artesao != null) {
+                vendaRepository.observarTodas().map { list ->
+                    list.filter { it.artesaoId == artesao.id }
+                }
+            } else {
+                flow { emit(emptyList<Venda>()) }
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
     // INSIGHTS: Sales by Day (Last 7 Days)
     val salesInsights = vendas.map { lista ->
+        getSalesByDay(lista)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), getSalesByDay(emptyList()))
+
+    private fun getSalesByDay(lista: List<Venda>): List<Pair<String, Int>> {
         val result = mutableListOf<Pair<String, Int>>()
         
+        // Ensure we match even if format has dashes or slashes
         for (i in 6 downTo 0) {
             val calcCalendar = Calendar.getInstance()
             calcCalendar.add(Calendar.DAY_OF_YEAR, -i)
-            val dateStr = dateFormat.format(calcCalendar.time)
+            
+            val dateStrSlash = SimpleDateFormat("dd/MM/yyyy", Locale.US).format(calcCalendar.time)
+            val dateStrDash = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(calcCalendar.time)
             
             val count = lista.count { 
-                it.dataHora.startsWith(dateStr)
+                val normalizedDate = it.dataHora.trim()
+                normalizedDate.startsWith(dateStrSlash) || normalizedDate.startsWith(dateStrDash)
             }
             
             val dayName = when(calcCalendar.get(Calendar.DAY_OF_WEEK)) {
@@ -59,8 +73,8 @@ class VendaViewModel(
             }
             result.add(dayName to count)
         }
-        result
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        return result
+    }
 
     // INSIGHTS: Top 3 Products
     val topProducts = vendas.map { lista ->
