@@ -4,6 +4,5 @@ data class ArtesaoResponse(
     val id: Long,
     val nome: String,
     val telefone: String,
-    val identificacao: String,
     val email: String
 )
