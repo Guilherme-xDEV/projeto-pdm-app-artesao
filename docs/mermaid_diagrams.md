@@ -4,7 +4,147 @@ This document contains the visual representation of the application's architectu
 
 ---
 
-## 1. System Architecture (Class Diagram)
+## 1. System Architecture Design
+
+High-level overview of the system components, including the mobile client, local persistence, cloud-based backend, and authentication.
+
+```mermaid
+graph TD
+    subgraph Client_Side ["Dispositivo Android (Client)"]
+        UI["Interface (Jetpack Compose)"]
+        VM["ViewModels (State Management)"]
+        Repo["Repositories (Data Sync)"]
+        Room[("Local DB (Room)")]
+        
+        UI <--> VM
+        VM <--> Repo
+        Repo <--> Room
+    end
+
+    subgraph Network ["Comunicação"]
+        Retrofit["Retrofit + OkHttp"]
+        JWT["JWT Auth Interceptor"]
+        Internet((Internet))
+        
+        Repo <--> Retrofit
+        Retrofit --- JWT
+        JWT <--> Internet
+    end
+
+    subgraph Server_Side ["Cloud Backend (Railway)"]
+        Spring["Spring Boot API"]
+        Security["Spring Security (JWT)"]
+        Postgres[("PostgreSQL DB")]
+        
+        Internet <--> Security
+        Security <--> Spring
+        Spring <--> Postgres
+    end
+
+    style Room fill:#f9f,stroke:#333,stroke-width:2px
+    style Postgres fill:#f9f,stroke:#333,stroke-width:2px
+    style Internet fill:#fff,stroke:#333,stroke-dasharray: 5 5
+```
+
+---
+
+## 2. Component Diagram
+
+Visualizes the functional modules of the system, their responsibilities, and how they interact through defined interfaces and services.
+
+```mermaid
+graph TB
+    subgraph Mobile_App ["Aplicativo Mobile (Android)"]
+        subgraph UI_Module ["Módulo de Interface (UI)"]
+            AuthUI[Autenticação/Perfil]
+            ProdUI[Gestão de Produtos]
+            SalesUI[Registro de Vendas]
+            DashUI[Dashboard/Métricas]
+        end
+
+        subgraph Core_Logic ["Lógica de Negócio (ViewModels)"]
+            AuthVM[AuthViewModel]
+            ProdVM[ProdutoViewModel]
+            SalesVM[VendaViewModel]
+        end
+
+        subgraph Data_Module ["Módulo de Dados"]
+            Repo[Repositories Sync]
+            Room[Room Persistence]
+            Session[Session Manager]
+        end
+
+        AuthUI --> AuthVM
+        ProdUI --> ProdVM
+        SalesUI --> SalesVM
+        DashUI --> ProdVM
+        DashUI --> SalesVM
+
+        AuthVM --> Repo
+        ProdVM --> Repo
+        SalesVM --> Repo
+        
+        Repo --> Room
+        Repo --> Session
+    end
+
+    subgraph Backend_Services ["Serviços Backend (Spring)"]
+        API[Spring Boot REST API]
+        Security[Módulo de Segurança JWT]
+        DB[(PostgreSQL)]
+        
+        Repo -- "HTTPS/REST" --> Security
+        Security --> API
+        API --> DB
+    end
+
+    %% Interfaces/Services
+    classDef component fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    class AuthUI,ProdUI,SalesUI,DashUI,AuthVM,ProdVM,SalesVM,Repo,Room,Session,API,Security component;
+```
+
+---
+
+## 3. Deployment Diagram
+
+Illustrates the physical deployment of the system, showing where the components are executed and how they communicate across different environments.
+
+```mermaid
+graph TD
+    subgraph User_Environment ["Ambiente do Usuário"]
+        Device["Android Device<br/>(Smartphone/Tablet)"]
+        subgraph Mobile_Runtime ["Runtime de Execução"]
+            App["NProjetoArtesanato.apk<br/>(Jetpack Compose App)"]
+            Room[("SQLite / Room DB")]
+        end
+        Device --- App
+        App --- Room
+    end
+
+    subgraph Cloud_Infrastructure ["Railway Cloud (PaaS)"]
+        subgraph Backend_Node ["Docker Container: API"]
+            Spring["Spring Boot Service<br/>(Java JRE 21)"]
+        end
+
+        subgraph Database_Node ["Instância de Banco de Dados"]
+            Postgres[("PostgreSQL Server")]
+        end
+    end
+
+    %% Communication paths
+    App -- "HTTPS / TLS (Port 443)<br/>REST API + JWT" --> Spring
+    Spring -- "JDBC / PostgreSQL Protocol<br/>Internal Network" --> Postgres
+
+    %% Styling
+    style User_Environment fill:#f5f5f5,stroke:#333,stroke-width:2px
+    style Cloud_Infrastructure fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    style Backend_Node fill:#fff,stroke:#1e88e5,stroke-dasharray: 5 5
+    style Database_Node fill:#fff,stroke:#1e88e5,stroke-dasharray: 5 5
+```
+
+---
+
+## 4. System Architecture (Class Diagram)
 
 Describes the structure of the application, showing the relationships between UI components, repositories, local persistence (Room), and remote synchronization (Retrofit).
 
@@ -81,24 +221,34 @@ classDiagram
     namespace Infrastructure {
         class ArtesaoDao {
             <<Interface>>
-            +insert()
-            +getByEmail()
+            +insert(artesao)
+            +getByEmail(email)
         }
         class ProdutoDao {
             <<Interface>>
-            +insertAll()
-            +getByArtesao()
-            +updateStock()
+            +insertAll(list)
+            +getByArtesao(id)
+            +update(produto)
+        }
+        class VendaDao {
+            <<Interface>>
+            +insert(venda)
+            +getAll()
         }
         class AuthApiService {
             <<Interface>>
-            +login()
-            +signup()
+            +login(request)
+            +signup(dto)
         }
         class ProdutoApiService {
             <<Interface>>
             +listarMeusProdutos()
-            +criar()
+            +criar(dto)
+        }
+        class VendaApiService {
+            <<Interface>>
+            +registrar(request)
+            +listarMinhasVendas()
         }
     }
 
@@ -114,7 +264,9 @@ classDiagram
     ProdutoRepository ..> ProdutoApiService : calls
     ProdutoRepository ..> ProdutoDao : persists
 
+    VendaRepository ..> VendaApiService : calls
     VendaRepository ..> VendaDao : persists
+    VendaRepository ..> ProdutoDao : updates stock
     VendaRepository ..> SessionManager : reads
 
     Artesao "1" --o "0..*" Produto : owns
@@ -122,7 +274,7 @@ classDiagram
 
 ---
 
-## 2. Authentication & Session Flow
+## 5. Authentication & Session Flow
 
 Describes how a user logs in and how the session is established both locally and remotely.
 
@@ -153,7 +305,7 @@ sequenceDiagram
 
 ---
 
-## 3. Dashboard Data Sync Flow
+## 6. Dashboard Data Sync Flow
 
 Shows how the dashboard stays updated by fetching remote data and updating the local source of truth.
 
@@ -188,7 +340,7 @@ sequenceDiagram
 
 ---
 
-## 4. Sales Registration Flow
+## 7. Sales Registration Flow
 
 Details the process of recording a sale, involving stock update and persistence.
 
@@ -211,7 +363,7 @@ sequenceDiagram
     VAPI-->>Repo: Venda Efetuada (Success)
     
     critical Local Updates (Atomic)
-        Repo->>PDB: updateStock(id, newQtd)
+        Repo->>PDB: update(produtoEntity)
         Repo->>VDB: insert(vendaEntity)
     end
     
@@ -221,7 +373,57 @@ sequenceDiagram
 
 ---
 
-## 5. Use Case Overview
+## 8. Entity-Relationship Diagram (ER Diagram)
+
+This diagram represents the database schema of the Spring Boot backend, including entities, attributes, and relationships.
+
+```mermaid
+erDiagram
+    ARTESAO ||--o{ PRODUTO : "cadastra"
+    ARTESAO ||--o{ VENDA : "possui"
+    PRODUTO ||--o{ VENDA : "vendido_em"
+    VENDEDOR |o--o{ VENDA : "realiza"
+
+    ARTESAO {
+        Long artesao_id PK
+        String nome
+        String telefone
+        String email
+        String senha
+    }
+
+    PRODUTO {
+        Long id PK
+        String nome
+        String descricao
+        Double preco
+        Integer quantidade_estoque
+        String qr_code_id
+        Boolean ativo
+        Long artesao_id FK
+    }
+
+    VENDEDOR {
+        Long vendedor_id PK
+        String nome
+        String telefone
+        String senha
+    }
+
+    VENDA {
+        Long venda_id PK
+        datetime dataHora
+        Double valor
+        Integer quantidade
+        Long artesao_id FK
+        Long produto_id FK
+        Long vendedor_id FK
+    }
+```
+
+---
+
+## 9. Use Case Overview
 
 Summary of main interactions within the artisan management system.
 

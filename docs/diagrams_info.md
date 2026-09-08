@@ -1,3 +1,82 @@
+## System Architecture Design
+---
+
+This high-level architecture diagram illustrates the end-to-end flow of the NProjetoArtesanato system, from the user's hand to the cloud.
+
+### 1. Client Side: Dispositivo Android
+The mobile application is the primary entry point for the user. It is built using modern Android standards:
+*   **UI (Jetpack Compose)**: Handles the rendering of views and user interactions.
+*   **ViewModels**: Manages UI state and business logic, decoupling the UI from data sources.
+*   **Repositories**: Orchestrates data synchronization between local and remote sources.
+*   **Room Database**: Acts as the local "Source of Truth," allowing the app to function offline and providing reactive data updates.
+
+### 2. Communication Layer
+Handles the secure transport of data over the internet:
+*   **Retrofit & OkHttp**: The HTTP client used for RESTful communication.
+*   **JWT Auth Interceptor**: Automatically attaches the Bearer token to requests, ensuring that every call to the backend is authenticated.
+*   **Internet**: The public cloud gateway that connects the client to the server.
+
+### 3. Cloud Backend: Server Side
+The backend infrastructure is hosted on **Railway** and provides the centralized data storage and logic:
+*   **Spring Security**: Validates JWT tokens and protects the API endpoints.
+*   **Spring Boot API**: Processes business logic, handles CRUD operations, and manages relationships between entities.
+*   **PostgreSQL**: The relational database used for persistent, long-term storage of all artisan, product, and sales data.
+
+---
+
+## Component Diagram
+---
+This diagram presents the functional organization of the system, dividing it into logical modules and specifying their responsibilities.
+
+### 1. Mobile App (Android)
+*   **Interface Module (UI)**: Responsible for the visual representation of features like Authentication, Product Management, Sales, and Dashboard.
+*   **Core Logic (ViewModels)**: Orchestrates the business logic for each UI module, acting as the bridge to the data layer.
+*   **Data Module**:
+    *   **Repositories Sync**: Manages the synchronization logic between local and remote data.
+    *   **Room Persistence**: Handles local data storage.
+    *   **Session Manager**: Maintains the global application state (active user and token).
+
+### 2. Backend Services (Spring Boot)
+*   **Spring Boot REST API**: Provides the business services and endpoints for the mobile app.
+*   **JWT Security Module**: Ensures secure communication through token-based authentication.
+*   **PostgreSQL**: Provides the long-term, relational persistence for all system data.
+
+### Communication & Dependencies
+*   The UI depends on ViewModels, which depend on Repositories.
+*   Repositories communicate with the Backend API via HTTPS/REST, secured by JWT.
+*   The local database (Room) is the primary source for the UI, ensuring resilience.
+
+---
+
+## Deployment Diagram
+---
+The deployment proposal describes the physical distribution of components and the communication protocols used between different environments.
+
+### 1. User Environment (Mobile Device)
+*   **Target Device**: Android Smartphone or Tablet running Android OS.
+*   **Deployment Unit**: `NProjetoArtesanato.apk` (or AAB).
+*   **Execution Runtime**: Android Runtime (ART) executing the Jetpack Compose binary.
+*   **Local Storage**: A Room (SQLite) database instance running locally on the device's internal storage.
+
+### 2. Cloud Infrastructure (Railway PaaS)
+*   **Application Server**: The Spring Boot backend is deployed as a **Docker Container** on the Railway platform.
+    *   **Runtime**: OpenJDK 21.
+    *   **Scaling**: Can be horizontally scaled by increasing the number of container instances.
+*   **Database Server**: A managed **PostgreSQL** instance provided by Railway.
+    *   **Connectivity**: Accessed exclusively by the backend via an internal network for enhanced security.
+
+### Justification & Decisions
+*   **Organization**: We adopted a **Client-Server** model where the heavy lifting (persistence and business rules) is centralized in the cloud, while the interface logic and local data caching remain on the device.
+*   **Environment Separation**: 
+    *   **Client side** ensures a highly responsive UI and offline functionality.
+    *   **Server side** ensures data consistency across multiple devices and centralized security management.
+*   **Communication**: 
+    *   **Public Network**: Uses **HTTPS (Port 443)** with TLS encryption and JWT authentication for all client-to-server calls.
+    *   **Private Network**: The backend communicates with the database using the PostgreSQL protocol over an internal, non-public interface to minimize attack surface.
+*   **Decision Rationale**: Railway was chosen for its native support for Docker and PostgreSQL, simplifying the CI/CD pipeline and deployment management.
+
+---
+
 ## Application Flux (Updated)
 ---
 
