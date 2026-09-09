@@ -77,6 +77,26 @@ The deployment proposal describes the physical distribution of components and th
 
 ---
 
+## Entity-Relationship Diagram (ER)
+---
+The data modeling follows a relational structure optimized for the backend PostgreSQL database, reflecting the artisan's control over their products and transactions.
+
+### 1. Entities & Attributes
+*   **ARTESAO (Artisan)**: Central entity for authentication and ownership. Attributes include `nome`, `email`, `telefone`, and the encrypted `senha`.
+*   **PRODUTO (Product)**: Items created by the artisan. Attributes include `nome`, `preco`, `quantidade_estoque`, and a unique `qr_code_id` (UUID) for identification.
+*   **VENDA (Sale)**: Transactional record. Stores `dataHora`, `valor` (calculated at the time of sale), and `quantidade`.
+
+### 2. Relationships & Cardinalities
+*   **ARTESAO -- PRODUTO (1:N)**: An artisan can register multiple products, but each product is owned by a single artisan.
+*   **ARTESAO -- VENDA (1:N)**: An artisan performs multiple sales. Since the system is per-user, the artisan acts as the seller.
+*   **PRODUTO -- VENDA (1:N)**: A specific product can be sold multiple times throughout the system's history.
+
+### 3. Data Integrity
+*   Foreign keys (`artesao_id`, `produto_id`) ensure that all sales are linked to valid entities.
+*   The `qr_code_id` is unique across the `PRODUTO` table to prevent identification conflicts.
+
+---
+
 ## Application Flux (Updated)
 ---
 

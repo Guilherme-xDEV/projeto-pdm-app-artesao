@@ -41,9 +41,9 @@ graph TD
         Spring <--> Postgres
     end
 
-    style Room fill:#f9f,stroke:#333,stroke-width:2px
-    style Postgres fill:#f9f,stroke:#333,stroke-width:2px
-    style Internet fill:#fff,stroke:#333,stroke-dasharray: 5 5
+    style Room fill:#e91e63,stroke:#880e4f,stroke-width:2px,color:#fff
+    style Postgres fill:#e91e63,stroke:#880e4f,stroke-width:2px,color:#fff
+    style Internet fill:#2196f3,stroke:#0d47a1,stroke-dasharray: 5 5,color:#fff
 ```
 
 ---
@@ -99,8 +99,15 @@ graph TB
     end
 
     %% Interfaces/Services
-    classDef component fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
-    class AuthUI,ProdUI,SalesUI,DashUI,AuthVM,ProdVM,SalesVM,Repo,Room,Session,API,Security component;
+    classDef presentation fill:#2196f3,stroke:#0d47a1,stroke-width:2px,color:#fff;
+    classDef logic fill:#ffc107,stroke:#ff8f00,stroke-width:2px,color:#000;
+    classDef data fill:#4caf50,stroke:#2e7d32,stroke-width:2px,color:#fff;
+    classDef infrastructure fill:#e91e63,stroke:#880e4f,stroke-width:2px,color:#fff;
+
+    class AuthUI,ProdUI,SalesUI,DashUI presentation;
+    class AuthVM,ProdVM,SalesVM logic;
+    class Repo,Session data;
+    class Room,API,Security,DB infrastructure;
 ```
 
 ---
@@ -136,18 +143,19 @@ graph TD
     Spring -- "JDBC / PostgreSQL Protocol<br/>Internal Network" --> Postgres
 
     %% Styling
-    style User_Environment fill:#f5f5f5,stroke:#333,stroke-width:2px
-    style Cloud_Infrastructure fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
-    style Backend_Node fill:#fff,stroke:#1e88e5,stroke-dasharray: 5 5
-    style Database_Node fill:#fff,stroke:#1e88e5,stroke-dasharray: 5 5
+    style User_Environment fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000
+    style Cloud_Infrastructure fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
+    style Backend_Node fill:#bbdefb,stroke:#1976d2,stroke-dasharray: 5 5,color:#000
+    style Database_Node fill:#f8bbd0,stroke:#c2185b,stroke-dasharray: 5 5,color:#000
 ```
 
 ---
 
-## 4. System Architecture (Class Diagram)
+## 4. System Architecture (Class Diagram - Compact)
 
-Describes the structure of the application, showing the relationships between UI components, repositories, local persistence (Room), and remote synchronization (Retrofit).
+Simplified view focusing on dependencies and core logic. Metadata and trivial fields are hidden to improve readability.
 
+### Complete
 ```mermaid
 classDiagram
     direction TB
@@ -157,11 +165,25 @@ classDiagram
         class LoginViewModel {
             +loginRemote(email, senha)
         }
+        class CadastroArtesaoViewModel {
+            +signupRemote(dto)
+        }
         class DashboardViewModel {
             -artesaoAtual: StateFlow
             -produtos: StateFlow
             -vendas: StateFlow
             +refreshDados()
+        }
+        class ProdutosViewModel {
+            -produtos: StateFlow
+            +deletarProduto(id)
+        }
+        class CadastroProdutoViewModel {
+            +cadastrarRemote(dto)
+        }
+        class VendaViewModel {
+            -vendas: StateFlow
+            +registrarVendaRemote(produtoId, qtd)
         }
         class ProfileViewModel {
             +atualizarPerfil(nome, telefone)
@@ -174,19 +196,28 @@ classDiagram
         class Artesao {
             +Long id
             +String nome
+            +String telefone
             +String email
+            +String senha
         }
         class Produto {
             +Long id
             +String nome
+            +String descricao
             +Double preco
             +Int quantidadeEstoque
             +String qrCodeId
+            +Boolean ativo
+            +Long artesaoId
         }
         class Venda {
             +Long id
             +String produto
+            +String artesao
+            +Long artesaoId
+            +String vendedor
             +String valor
+            +Int quantidade
             +String dataHora
         }
     }
@@ -254,8 +285,13 @@ classDiagram
 
     %% Relationships
     LoginViewModel ..> ArtesaoRepository : uses
+    CadastroArtesaoViewModel ..> ArtesaoRepository : uses
     DashboardViewModel ..> ProdutoRepository : uses
     DashboardViewModel ..> VendaRepository : uses
+    ProdutosViewModel ..> ProdutoRepository : uses
+    CadastroProdutoViewModel ..> ProdutoRepository : uses
+    VendaViewModel ..> VendaRepository : uses
+    ProfileViewModel ..> ArtesaoRepository : uses
     
     ArtesaoRepository ..> AuthApiService : calls
     ArtesaoRepository ..> ArtesaoDao : persists
@@ -270,6 +306,72 @@ classDiagram
     VendaRepository ..> SessionManager : reads
 
     Artesao "1" --o "0..*" Produto : owns
+    Produto "1" --o "0..*" Venda : sold in
+    Artesao "1" --o "0..*" Venda : performs
+```
+
+### Compacted
+```mermaid
+classDiagram
+    direction TB
+
+    %% Presentation Layer
+    class ViewModels {
+        +LoginVM
+        +DashboardVM
+        +ProdutosVM
+        +VendaVM
+        +ProfileVM
+    }
+
+    %% Domain Layer
+    class Models {
+        +Artesao
+        +Produto
+        +Venda
+    }
+
+    %% Data Layer
+    class Repositories {
+        +ArtesaoRepo
+        +ProdutoRepo
+        +VendaRepo
+    }
+
+    class SessionManager {
+        <<Singleton>>
+        +artesaoAtual
+    }
+
+    %% Infrastructure
+    class Local_Persistence {
+        <<Room>>
+        +ArtesaoDao
+        +ProdutoDao
+        +VendaDao
+    }
+
+    class Remote_API {
+        <<Retrofit>>
+        +AuthAPI
+        +ProdutoAPI
+        +VendaAPI
+    }
+
+    %% Relationships
+    ViewModels ..> Repositories : calls
+    Repositories ..> Local_Persistence : local storage
+    Repositories ..> Remote_API : sync remote
+    Repositories ..> SessionManager : updates
+    
+    %% Business Logic Links
+    Models "1" --o "*" Models : associations
+    Repositories ..> Models : manages
+
+    style ViewModels fill:#2196f3,stroke:#0d47a1,color:#fff
+    style Repositories fill:#ffc107,stroke:#ff8f00,color:#000
+    style Local_Persistence fill:#4caf50,stroke:#2e7d32,color:#fff
+    style Remote_API fill:#e91e63,stroke:#880e4f,color:#fff
 ```
 
 ---
@@ -375,14 +477,13 @@ sequenceDiagram
 
 ## 8. Entity-Relationship Diagram (ER Diagram)
 
-This diagram represents the database schema of the Spring Boot backend, including entities, attributes, and relationships.
+This diagram represents the database schema of the Spring Boot backend, updated to reflect the Artisan as the primary actor for all operations (including Sales).
 
 ```mermaid
 erDiagram
     ARTESAO ||--o{ PRODUTO : "cadastra"
-    ARTESAO ||--o{ VENDA : "possui"
+    ARTESAO ||--o{ VENDA : "realiza"
     PRODUTO ||--o{ VENDA : "vendido_em"
-    VENDEDOR |o--o{ VENDA : "realiza"
 
     ARTESAO {
         Long artesao_id PK
@@ -403,13 +504,6 @@ erDiagram
         Long artesao_id FK
     }
 
-    VENDEDOR {
-        Long vendedor_id PK
-        String nome
-        String telefone
-        String senha
-    }
-
     VENDA {
         Long venda_id PK
         datetime dataHora
@@ -417,41 +511,57 @@ erDiagram
         Integer quantidade
         Long artesao_id FK
         Long produto_id FK
-        Long vendedor_id FK
     }
 ```
 
 ---
 
-## 9. Use Case Overview
+## 9. Use Case Diagram (UML Standard)
 
-Summary of main interactions within the artisan management system.
+This diagram describes the functional requirements and the interaction between the primary actor (Artisan) and the system.
 
 ```mermaid
-graph LR
-    subgraph Atores
-        Artesao((Artesão))
-        Vendedor((Vendedor/Artesão))
+flowchart LR
+    %% Actor
+    subgraph Actor ["Ator"]
+        A((Artesão))
     end
 
-    subgraph "NProjetoArtesanato - Sistema"
-        UC1(Autenticação e Perfil)
-        UC2(Gestão de Catálogo)
-        UC3(Visualização de Métricas)
-        UC4(Geração de QR Code)
-        UC5(Registro de Vendas)
-        UC6(Histórico de Vendas)
+    %% System Boundary
+    subgraph System ["NProjetoArtesanato - Sistema de Gestão"]
+        direction TB
+        
+        %% Use Cases
+        UC1([Autenticação e Perfil])
+        UC2([Cadastrar Produto])
+        UC3([Gerenciar Catálogo])
+        UC4([Visualizar Métricas])
+        UC5([Gerar QR Code])
+        UC6([Registrar Venda])
+        UC7([Consultar Histórico])
+        UC8([Sincronizar Dados])
     end
 
-    Artesao --- UC1
-    Artesao --- UC2
-    Artesao --- UC3
-    Artesao --- UC4
+    %% Associations
+    A --- UC1
+    A --- UC2
+    A --- UC3
+    A --- UC4
+    A --- UC5
+    A --- UC6
+    A --- UC7
+    A --- UC8
+
+    %% Relationships (Include/Extend)
+    UC2 -.->|include| UC8
+    UC6 -.->|include| UC8
+    UC6 -.->|update stock| UC3
+    UC5 -.->|extend| UC3
+
+    %% Styling to look like Use Case
+    classDef actor fill:#ececff,stroke:#9370db,stroke-width:2px,color:#000;
+    classDef usecase fill:#2196f3,stroke:#0d47a1,stroke-width:2px,color:#fff;
     
-    Vendedor --- UC5
-    Vendedor --- UC6
-
-    UC2 -.->|updates| UC3
-    UC5 -.->|decrements stock| UC2
-    UC5 -.->|requires| UC1
+    class A actor;
+    class UC1,UC2,UC3,UC4,UC5,UC6,UC7,UC8 usecase;
 ```
