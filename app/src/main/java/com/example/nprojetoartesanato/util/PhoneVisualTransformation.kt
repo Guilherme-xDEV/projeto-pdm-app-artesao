@@ -8,66 +8,65 @@ import androidx.compose.ui.text.input.VisualTransformation
 class PhoneVisualTransformation : VisualTransformation {
 
     override fun filter(text: AnnotatedString): TransformedText {
-        val trimmed = if (text.text.length >= 11) text.text.substring(0, 11) else text.text
-        val out = StringBuilder()
+        val raw = if (text.text.length > 11) text.text.substring(0, 11) else text.text
 
-        for (i in trimmed.indices) {
+        // Build formatted string and precompute mapping tables
+        val formatted = StringBuilder()
+        // originalToTransformedMap[i] = position in formatted string for original index i
+        val originalToTransformed = IntArray(raw.length + 1)
+        originalToTransformed[0] = 0
+
+        for (i in raw.indices) {
             when (i) {
-                0 -> out.append("(").append(trimmed[i])
-                1 -> out.append(trimmed[i]).append(") ")
+                0 -> {
+                    formatted.append("(")
+                    formatted.append(raw[i])
+                }
+                1 -> {
+                    formatted.append(raw[i])
+                    formatted.append(") ")
+                }
                 5 -> {
-                    if (trimmed.length <= 10) {
-                        out.append(trimmed[i])
-                    } else {
-                        out.append(trimmed[i])
+                    formatted.append(raw[i])
+                    if (raw.length <= 10) {
+                        formatted.append("-")
                     }
                 }
                 6 -> {
-                    if (trimmed.length <= 10) {
-                        out.append("-").append(trimmed[i])
-                    } else {
-                        out.append(trimmed[i])
+                    formatted.append(raw[i])
+                    if (raw.length > 10) {
+                        formatted.append("-")
                     }
                 }
-                7 -> {
-                    if (trimmed.length > 10) {
-                        out.append("-").append(trimmed[i])
-                    } else {
-                        out.append(trimmed[i])
-                    }
+                else -> {
+                    formatted.append(raw[i])
                 }
-                else -> out.append(trimmed[i])
             }
+            originalToTransformed[i + 1] = formatted.length
         }
 
-        val phoneOffsetTranslator = object : OffsetMapping {
-            override fun originalToTransformed(offset: Int): Int {
-                if (offset <= 0) return 0
-                val textLength = trimmed.length
-                if (offset >= textLength) return out.length
+        // transformedToOriginalMap[j] = original index for transformed position j
+        val transformedToOriginal = IntArray(formatted.length + 1)
+        var origIndex = 0
+        for (j in 0..formatted.length) {
+            while (origIndex < raw.length && originalToTransformed[origIndex + 1] <= j) {
+                origIndex++
+            }
+            transformedToOriginal[j] = origIndex
+        }
 
-                val isCell = textLength > 10
-                return when {
-                    offset <= 2 -> offset + 1 // after '('
-                    offset <= 6 -> offset + 3 // after ') '
-                    isCell && offset <= 7 -> offset + 3
-                    else -> offset + 4 // after '-'
-                }
+        val offsetTranslator = object : OffsetMapping {
+            override fun originalToTransformed(offset: Int): Int {
+                val clamped = offset.coerceIn(0, raw.length)
+                return originalToTransformed[clamped]
             }
 
             override fun transformedToOriginal(offset: Int): Int {
-                val textLength = trimmed.length
-                val isCell = textLength > 10
-                return when {
-                    offset <= 1 -> 0
-                    offset <= 4 -> offset - 1
-                    offset <= 9 -> offset - 3
-                    isCell && offset <= 10 -> offset - 3
-                    else -> (offset - 4).coerceAtMost(textLength)
-                }
+                val clamped = offset.coerceIn(0, formatted.length)
+                return transformedToOriginal[clamped]
             }
         }
 
-        return TransformedText(AnnotatedString(out.toString()), phoneOffsetTranslator)
+        return TransformedText(AnnotatedString(formatted.toString()), offsetTranslator)
     }
 }

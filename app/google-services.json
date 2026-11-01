@@ -12,7 +12,20 @@
           "package_name": "com.example.nprojetoartesanato"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "668986612522-243ngntl9j32oqcafnd8el9usui362gk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.nprojetoartesanato",
+            "certificate_hash": "0f8bc06288b1612d1a0e7b942616f806bafaa8dd"
+          }
+        },
+        {
+          "client_id": "668986612522-o3g1m25r6eq02vdo53epf8a4tqsflr4t.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDK63ur-5wLB0SWSPMViAvxFnRDKRU0_uY"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "668986612522-o3g1m25r6eq02vdo53epf8a4tqsflr4t.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
