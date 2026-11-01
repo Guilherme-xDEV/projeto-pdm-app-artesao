@@ -59,8 +59,8 @@ class CadastroArtesaoViewModel(private val repository: ArtesaoRepository) : View
     }
 
     fun atualizarTelefone(valor: String) {
-        // Only numbers for simplicity
-        telefone = valor.filter { it.isDigit() }
+        // Only numbers (up to 11 digits for DDD + cell phone)
+        telefone = valor.filter { it.isDigit() }.take(11)
     }
 
     fun atualizarEmail(valor: String) {

@@ -74,10 +74,11 @@ fun CadastroArtesaoScreen(
             OutlinedTextField(
                 value = viewModel.telefone,
                 onValueChange = viewModel::atualizarTelefone,
-                label = { Text("Telefone (apenas números)") },
+                label = { Text("Telefone (DDD + número)") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true,
+                visualTransformation = com.example.nprojetoartesanato.util.PhoneVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 isError = viewModel.telefoneErro != null,
                 supportingText = {
