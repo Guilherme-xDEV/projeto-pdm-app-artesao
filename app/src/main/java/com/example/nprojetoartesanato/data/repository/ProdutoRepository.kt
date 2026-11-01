@@ -1,103 +1,182 @@
 package com.example.nprojetoartesanato.data.repository
 
+import com.example.nprojetoartesanato.data.firebase.FirebaseClient
 import com.example.nprojetoartesanato.data.local.dao.ProdutoDao
 import com.example.nprojetoartesanato.data.local.entities.toDomain
 import com.example.nprojetoartesanato.data.local.entities.toEntity
-import com.example.nprojetoartesanato.data.network.RetrofitClient
 import com.example.nprojetoartesanato.data.network.dto.ProdutoCreateDTO
 import com.example.nprojetoartesanato.data.network.dto.ProdutoUpdateDTO
+import com.example.nprojetoartesanato.data.session.SessionManager
 import com.example.nprojetoartesanato.model.Produto
 import com.example.nprojetoartesanato.model.dto.AtualizarProdutoDTO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.tasks.await
 
 class ProdutoRepository(private val produtoDao: ProdutoDao) {
 
-    private val apiService = RetrofitClient.produtoApiService
-
     suspend fun cadastrarRemote(dto: ProdutoCreateDTO): Produto? {
         return try {
-            val response = apiService.criar(dto)
-            if (response.isSuccessful) {
-                val body = response.body()
-                if (body != null) {
-                    val produto = mapResponseToModel(body)
-                    produtoDao.insert(produto.toEntity())
-                    produto
-                } else null
-            } else null
+            val artesaoId = SessionManager.artesaoAtual.value?.id ?: 0L
+            val docRef = FirebaseClient.produtosCollection.document()
+            val numericId = (docRef.id.hashCode().toLong() and 0x7FFFFFFF)
+
+            val produtoData = hashMapOf(
+                "id" to numericId,
+                "firestoreId" to docRef.id,
+                "nome" to dto.nome,
+                "descricao" to dto.descricao,
+                "preco" to dto.preco,
+                "quantidadeEstoque" to dto.quantidadeEstoque,
+                "artesaoId" to artesaoId,
+                "qrCodeId" to dto.qrCodeId,
+                "ativo" to true
+            )
+
+            docRef.set(produtoData).await()
+
+            val produto = Produto(
+                id = numericId,
+                nome = dto.nome,
+                descricao = dto.descricao,
+                preco = dto.preco,
+                quantidadeEstoque = dto.quantidadeEstoque,
+                artesaoId = artesaoId,
+                qrCodeId = dto.qrCodeId,
+                ativo = true
+            )
+
+            produtoDao.insert(produto.toEntity())
+            produto
         } catch (e: Exception) {
+            e.printStackTrace()
             null
         }
     }
 
     suspend fun listarMeusProdutosRemote(): List<Produto> {
         return try {
-            val response = apiService.listarMeusProdutos()
-            if (response.isSuccessful) {
-                val remoteList = response.body()?.map { mapResponseToModel(it) } ?: emptyList()
-                com.example.nprojetoartesanato.data.session.SessionManager.artesaoAtual.value?.id?.let { artesaoId ->
-                    // Replace locally
-                    produtoDao.deleteByArtesao(artesaoId)
-                    produtoDao.insertAll(remoteList.map { it.toEntity() })
-                }
-                remoteList
-            } else emptyList()
+            val artesaoId = SessionManager.artesaoAtual.value?.id ?: 0L
+            val querySnapshot = FirebaseClient.produtosCollection
+                .whereEqualTo("artesaoId", artesaoId)
+                .whereEqualTo("ativo", true)
+                .get()
+                .await()
+
+            val remoteList = querySnapshot.documents.mapNotNull { doc ->
+                val id = doc.getLong("id") ?: return@mapNotNull null
+                val nome = doc.getString("nome") ?: ""
+                val descricao = doc.getString("descricao") ?: ""
+                val preco = doc.getDouble("preco") ?: 0.0
+                val quantidadeEstoque = doc.getLong("quantidadeEstoque")?.toInt() ?: 0
+                val qrCodeId = doc.getString("qrCodeId") ?: ""
+                val ativo = doc.getBoolean("ativo") ?: true
+
+                Produto(
+                    id = id,
+                    nome = nome,
+                    descricao = descricao,
+                    preco = preco,
+                    quantidadeEstoque = quantidadeEstoque,
+                    artesaoId = artesaoId,
+                    qrCodeId = qrCodeId,
+                    ativo = ativo
+                )
+            }
+
+            if (artesaoId != 0L) {
+                produtoDao.deleteByArtesao(artesaoId)
+                produtoDao.insertAll(remoteList.map { it.toEntity() })
+            }
+
+            remoteList
         } catch (e: Exception) {
+            e.printStackTrace()
             emptyList()
         }
     }
 
     suspend fun buscarPorIdRemote(id: Long): Produto? {
         return try {
-            val response = apiService.buscarPorId(id)
-            if (response.isSuccessful) {
-                response.body()?.let { mapResponseToModel(it) }
-            } else null
+            val querySnapshot = FirebaseClient.produtosCollection
+                .whereEqualTo("id", id)
+                .get()
+                .await()
+
+            val doc = querySnapshot.documents.firstOrNull() ?: return null
+            val artesaoId = doc.getLong("artesaoId") ?: 0L
+            val nome = doc.getString("nome") ?: ""
+            val descricao = doc.getString("descricao") ?: ""
+            val preco = doc.getDouble("preco") ?: 0.0
+            val quantidadeEstoque = doc.getLong("quantidadeEstoque")?.toInt() ?: 0
+            val qrCodeId = doc.getString("qrCodeId") ?: ""
+            val ativo = doc.getBoolean("ativo") ?: true
+
+            Produto(
+                id = id,
+                nome = nome,
+                descricao = descricao,
+                preco = preco,
+                quantidadeEstoque = quantidadeEstoque,
+                artesaoId = artesaoId,
+                qrCodeId = qrCodeId,
+                ativo = ativo
+            )
         } catch (e: Exception) {
+            e.printStackTrace()
             null
         }
     }
 
     suspend fun atualizarRemote(id: Long, dto: ProdutoUpdateDTO): Produto? {
         return try {
-            val response = apiService.atualizar(id, dto)
-            if (response.isSuccessful) {
-                val body = response.body()
-                if (body != null) {
-                    val produto = mapResponseToModel(body)
-                    produtoDao.update(produto.toEntity())
-                    produto
-                } else null
+            val querySnapshot = FirebaseClient.produtosCollection
+                .whereEqualTo("id", id)
+                .get()
+                .await()
+
+            val doc = querySnapshot.documents.firstOrNull() ?: return null
+            val updates = mutableMapOf<String, Any>()
+
+            dto.nome?.let { updates["nome"] = it }
+            dto.descricao?.let { updates["descricao"] = it }
+            dto.preco?.let { updates["preco"] = it }
+
+            if (updates.isNotEmpty()) {
+                doc.reference.update(updates).await()
+            }
+
+            val existing = produtoDao.getById(id)
+            if (existing != null) {
+                val updatedEntity = existing.copy(
+                    nome = dto.nome ?: existing.nome,
+                    descricao = dto.descricao ?: existing.descricao,
+                    preco = dto.preco ?: existing.preco
+                )
+                produtoDao.update(updatedEntity)
+                updatedEntity.toDomain()
             } else null
         } catch (e: Exception) {
+            e.printStackTrace()
             null
         }
     }
 
     suspend fun deletarRemote(id: Long): Boolean {
         return try {
-            val response = apiService.deletar(id)
-            if (response.isSuccessful) {
-                produtoDao.deleteById(id)
-                true
-            } else false
+            val querySnapshot = FirebaseClient.produtosCollection
+                .whereEqualTo("id", id)
+                .get()
+                .await()
+
+            val doc = querySnapshot.documents.firstOrNull() ?: return false
+            doc.reference.update("ativo", false).await()
+            produtoDao.deleteById(id)
+            true
         } catch (e: Exception) {
+            e.printStackTrace()
             false
         }
-    }
-
-    private fun mapResponseToModel(response: com.example.nprojetoartesanato.data.network.dto.ProdutoResponse): Produto {
-        return Produto(
-            id = response.id,
-            nome = response.nome,
-            descricao = response.descricao,
-            preco = response.preco,
-            quantidadeEstoque = response.quantidadeEstoque,
-            artesaoId = response.artesaoId,
-            qrCodeId = response.qrCodeId,
-            ativo = response.ativo
-        )
     }
 
     suspend fun cadastrar(produto: Produto): Produto {
