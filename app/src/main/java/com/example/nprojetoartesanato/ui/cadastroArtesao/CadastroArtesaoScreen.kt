@@ -7,13 +7,20 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -101,6 +108,8 @@ fun CadastroArtesaoScreen(
                 }
             )
 
+            var senhaVisivel by remember { mutableStateOf(false) }
+
             // Senha
             OutlinedTextField(
                 value = viewModel.senha,
@@ -109,8 +118,15 @@ fun CadastroArtesaoScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
+                visualTransformation = if (senhaVisivel) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                trailingIcon = {
+                    val image = if (senhaVisivel) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                    val description = if (senhaVisivel) "Ocultar senha" else "Mostrar senha"
+                    IconButton(onClick = { senhaVisivel = !senhaVisivel }) {
+                        Icon(imageVector = image, contentDescription = description)
+                    }
+                },
                 isError = viewModel.senhaErro != null,
                 supportingText = {
                     viewModel.senhaErro?.let { Text(it) }
