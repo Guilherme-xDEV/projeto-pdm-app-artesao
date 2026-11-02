@@ -9,41 +9,89 @@ import com.example.nprojetoartesanato.data.network.dto.ProdutoUpdateDTO
 import com.example.nprojetoartesanato.data.session.SessionManager
 import com.example.nprojetoartesanato.model.Produto
 import com.example.nprojetoartesanato.model.dto.AtualizarProdutoDTO
+import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldValue
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 
 class ProdutoRepository(private val produtoDao: ProdutoDao) {
 
+    private fun idLocal(documentId: String): Long =
+        (documentId.hashCode().toLong() and 0x7FFFFFFF)
+
+    private fun precoEmReais(document: DocumentSnapshot): Double {
+        val centavos = (document.get("precoCentavos") as? Number)?.toLong()
+        if (centavos != null) return centavos / 100.0
+        return (document.get("preco") as? Number)?.toDouble() ?: 0.0
+    }
+
+    private fun produtoDoDocumento(
+        document: DocumentSnapshot,
+        artesaoIdLocal: Long
+    ): Produto {
+        val id = document.getLong("id") ?: idLocal(document.id)
+        val quantidade = (document.get("quantidadeEstoque") as? Number)?.toInt() ?: 0
+
+        return Produto(
+            id = id,
+            nome = document.getString("nome") ?: "",
+            descricao = document.getString("descricao") ?: "",
+            preco = precoEmReais(document),
+            quantidadeEstoque = quantidade,
+            artesaoId = artesaoIdLocal,
+            qrCodeId = document.getString("qrCodeId") ?: document.id,
+            ativo = document.getBoolean("ativo") ?: true,
+            firestoreId = document.id
+        )
+    }
+
+    /**
+     * Creates canonical product documents:
+     * - Firestore document ID equals qrCodeId.
+     * - artesaoId is the Firebase Auth UID.
+     * - price is stored as an integer number of cents.
+     */
     suspend fun cadastrarRemote(dto: ProdutoCreateDTO): Produto? {
         return try {
-            val artesaoId = SessionManager.artesaoAtual.value?.id ?: 0L
-            val docRef = FirebaseClient.produtosCollection.document()
-            val numericId = (docRef.id.hashCode().toLong() and 0x7FFFFFFF)
+            val artesao = SessionManager.artesaoAtual.value ?: return null
+            val uid = FirebaseClient.auth.currentUser?.uid ?: return null
+            val docRef = FirebaseClient.produtosCollection.document(dto.qrCodeId)
+            val numericId = idLocal(docRef.id)
+            val precoCentavos = kotlin.math.round(dto.preco * 100).toLong()
 
-            val produtoData = hashMapOf(
+            val produtoData = hashMapOf<String, Any>(
                 "id" to numericId,
                 "firestoreId" to docRef.id,
                 "nome" to dto.nome,
                 "descricao" to dto.descricao,
-                "preco" to dto.preco,
+                "precoCentavos" to precoCentavos,
                 "quantidadeEstoque" to dto.quantidadeEstoque,
-                "artesaoId" to artesaoId,
+                "artesaoId" to uid,
+                "artesaoNome" to artesao.nome,
                 "qrCodeId" to dto.qrCodeId,
-                "ativo" to true
+                "ativo" to true,
+                "criadoEm" to FieldValue.serverTimestamp()
             )
 
-            docRef.set(produtoData).await()
+            FirebaseClient.db.runTransaction { transaction ->
+                if (transaction.get(docRef).exists()) {
+                    throw IllegalStateException("Identificador QR já utilizado. Gere outro código.")
+                }
+                transaction.set(docRef, produtoData)
+                null
+            }.await()
 
             val produto = Produto(
                 id = numericId,
                 nome = dto.nome,
                 descricao = dto.descricao,
-                preco = dto.preco,
+                preco = precoCentavos / 100.0,
                 quantidadeEstoque = dto.quantidadeEstoque,
-                artesaoId = artesaoId,
+                artesaoId = artesao.id,
                 qrCodeId = dto.qrCodeId,
-                ativo = true
+                ativo = true,
+                firestoreId = docRef.id
             )
 
             produtoDao.insert(produto.toEntity())
@@ -54,41 +102,60 @@ class ProdutoRepository(private val produtoDao: ProdutoDao) {
         }
     }
 
+    /**
+     * Loads both canonical UID-owned documents and legacy documents whose
+     * artesaoId is the numeric Room/profile ID. Legacy documents are upgraded
+     * in place; their document ID and QR payload are never changed.
+     */
     suspend fun listarMeusProdutosRemote(): List<Produto> {
         return try {
-            val artesaoId = SessionManager.artesaoAtual.value?.id ?: 0L
-            val querySnapshot = FirebaseClient.produtosCollection
-                .whereEqualTo("artesaoId", artesaoId)
+            val artesao = SessionManager.artesaoAtual.value ?: return emptyList()
+            val uid = FirebaseClient.auth.currentUser?.uid ?: return emptyList()
+            val produtos = FirebaseClient.produtosCollection
+
+            val canonicos = produtos
+                .whereEqualTo("artesaoId", uid)
                 .whereEqualTo("ativo", true)
                 .get()
                 .await()
 
-            val remoteList = querySnapshot.documents.mapNotNull { doc ->
-                val id = doc.getLong("id") ?: return@mapNotNull null
-                val nome = doc.getString("nome") ?: ""
-                val descricao = doc.getString("descricao") ?: ""
-                val preco = doc.getDouble("preco") ?: 0.0
-                val quantidadeEstoque = doc.getLong("quantidadeEstoque")?.toInt() ?: 0
-                val qrCodeId = doc.getString("qrCodeId") ?: ""
-                val ativo = doc.getBoolean("ativo") ?: true
+            val legados = produtos
+                .whereEqualTo("artesaoId", artesao.id)
+                .whereEqualTo("ativo", true)
+                .get()
+                .await()
 
-                Produto(
-                    id = id,
-                    nome = nome,
-                    descricao = descricao,
-                    preco = preco,
-                    quantidadeEstoque = quantidadeEstoque,
-                    artesaoId = artesaoId,
-                    qrCodeId = qrCodeId,
-                    ativo = ativo
-                )
+            val documentos = (canonicos.documents + legados.documents).distinctBy { it.id }
+
+            // Migrate legacy documents after the query, retaining their stable document IDs.
+            legados.documents.forEach { document ->
+                try {
+                    val precoCentavos = kotlin.math.round(precoEmReais(document) * 100).toLong()
+                    if (precoCentavos > 0) {
+                        document.reference.update(
+                            mapOf(
+                                "id" to (document.getLong("id") ?: idLocal(document.id)),
+                                "firestoreId" to document.id,
+                                "artesaoId" to uid,
+                                "artesaoNome" to (document.getString("artesaoNome") ?: artesao.nome),
+                                "qrCodeId" to (document.getString("qrCodeId") ?: document.id),
+                                "precoCentavos" to precoCentavos,
+                                "preco" to FieldValue.delete(),
+                                "atualizadoEm" to FieldValue.serverTimestamp()
+                            )
+                        ).await()
+                    }
+                } catch (migrationError: Exception) {
+                    // Keep legacy products readable even if a rule/deployment blocks migration.
+                    migrationError.printStackTrace()
+                }
             }
 
-            if (artesaoId != 0L) {
-                produtoDao.deleteByArtesao(artesaoId)
-                produtoDao.insertAll(remoteList.map { it.toEntity() })
-            }
+            val remoteList = documentos
+                .map { document -> produtoDoDocumento(document, artesao.id) }
 
+            produtoDao.deleteByArtesao(artesao.id)
+            produtoDao.insertAll(remoteList.map { it.toEntity() })
             remoteList
         } catch (e: Exception) {
             e.printStackTrace()
@@ -98,30 +165,23 @@ class ProdutoRepository(private val produtoDao: ProdutoDao) {
 
     suspend fun buscarPorIdRemote(id: Long): Produto? {
         return try {
-            val querySnapshot = FirebaseClient.produtosCollection
-                .whereEqualTo("id", id)
-                .get()
-                .await()
+            val artesaoId = SessionManager.artesaoAtual.value?.id ?: return null
+            val local = produtoDao.getById(id)
+            val firestoreId = local?.firestoreId
 
-            val doc = querySnapshot.documents.firstOrNull() ?: return null
-            val artesaoId = doc.getLong("artesaoId") ?: 0L
-            val nome = doc.getString("nome") ?: ""
-            val descricao = doc.getString("descricao") ?: ""
-            val preco = doc.getDouble("preco") ?: 0.0
-            val quantidadeEstoque = doc.getLong("quantidadeEstoque")?.toInt() ?: 0
-            val qrCodeId = doc.getString("qrCodeId") ?: ""
-            val ativo = doc.getBoolean("ativo") ?: true
+            val document = if (!firestoreId.isNullOrBlank()) {
+                FirebaseClient.produtosCollection.document(firestoreId).get().await()
+            } else {
+                FirebaseClient.produtosCollection
+                    .whereEqualTo("id", id)
+                    .get()
+                    .await()
+                    .documents
+                    .firstOrNull()
+            } ?: return null
 
-            Produto(
-                id = id,
-                nome = nome,
-                descricao = descricao,
-                preco = preco,
-                quantidadeEstoque = quantidadeEstoque,
-                artesaoId = artesaoId,
-                qrCodeId = qrCodeId,
-                ativo = ativo
-            )
+            if (!document.exists()) return null
+            produtoDoDocumento(document, artesaoId)
         } catch (e: Exception) {
             e.printStackTrace()
             null
@@ -130,47 +190,66 @@ class ProdutoRepository(private val produtoDao: ProdutoDao) {
 
     suspend fun atualizarRemote(id: Long, dto: ProdutoUpdateDTO): Produto? {
         return try {
-            val querySnapshot = FirebaseClient.produtosCollection
-                .whereEqualTo("id", id)
-                .get()
-                .await()
-
-            val doc = querySnapshot.documents.firstOrNull() ?: return null
-            val updates = mutableMapOf<String, Any>()
-
-            dto.nome?.let { updates["nome"] = it }
-            dto.descricao?.let { updates["descricao"] = it }
-            dto.preco?.let { updates["preco"] = it }
-
-            if (updates.isNotEmpty()) {
-                doc.reference.update(updates).await()
+            val artesaoId = SessionManager.artesaoAtual.value?.id ?: return null
+            val local = produtoDao.getById(id)
+            val reference = if (!local?.firestoreId.isNullOrBlank()) {
+                FirebaseClient.produtosCollection.document(local!!.firestoreId)
+            } else {
+                FirebaseClient.produtosCollection
+                    .whereEqualTo("id", id)
+                    .get()
+                    .await()
+                    .documents
+                    .firstOrNull()
+                    ?.reference ?: return null
             }
 
-            val existing = produtoDao.getById(id)
-            if (existing != null) {
-                val updatedEntity = existing.copy(
-                    nome = dto.nome ?: existing.nome,
-                    descricao = dto.descricao ?: existing.descricao,
-                    preco = dto.preco ?: existing.preco
-                )
-                produtoDao.update(updatedEntity)
-                updatedEntity.toDomain()
-            } else null
+            val updates = mutableMapOf<String, Any>()
+            dto.nome?.let { updates["nome"] = it }
+            dto.descricao?.let { updates["descricao"] = it }
+            dto.preco?.let {
+                updates["precoCentavos"] = kotlin.math.round(it * 100).toLong()
+                updates["preco"] = FieldValue.delete()
+            }
+            updates["atualizadoEm"] = FieldValue.serverTimestamp()
+            reference.update(updates).await()
+
+            val existing = local ?: return buscarPorIdRemote(id)
+            val updatedEntity = existing.copy(
+                nome = dto.nome ?: existing.nome,
+                descricao = dto.descricao ?: existing.descricao,
+                preco = dto.preco ?: existing.preco
+            )
+            produtoDao.update(updatedEntity)
+            updatedEntity.toDomain()
         } catch (e: Exception) {
             e.printStackTrace()
             null
         }
     }
 
+    /** Logical deletion; the Firestore document and QR history are preserved. */
     suspend fun deletarRemote(id: Long): Boolean {
         return try {
-            val querySnapshot = FirebaseClient.produtosCollection
-                .whereEqualTo("id", id)
-                .get()
-                .await()
+            val local = produtoDao.getById(id)
+            val reference = if (!local?.firestoreId.isNullOrBlank()) {
+                FirebaseClient.produtosCollection.document(local!!.firestoreId)
+            } else {
+                FirebaseClient.produtosCollection
+                    .whereEqualTo("id", id)
+                    .get()
+                    .await()
+                    .documents
+                    .firstOrNull()
+                    ?.reference ?: return false
+            }
 
-            val doc = querySnapshot.documents.firstOrNull() ?: return false
-            doc.reference.update("ativo", false).await()
+            reference.update(
+                mapOf(
+                    "ativo" to false,
+                    "atualizadoEm" to FieldValue.serverTimestamp()
+                )
+            ).await()
             produtoDao.deleteById(id)
             true
         } catch (e: Exception) {
