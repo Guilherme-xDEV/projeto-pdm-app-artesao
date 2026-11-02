@@ -101,6 +101,13 @@ class VendaViewModel(
 
     init {
         refreshVendas()
+        refreshProdutos()
+    }
+
+    private fun refreshProdutos() {
+        viewModelScope.launch {
+            produtoRepository.listarMeusProdutosRemote()
+        }
     }
 
     fun refreshVendas() {
