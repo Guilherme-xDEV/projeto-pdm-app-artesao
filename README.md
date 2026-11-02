@@ -102,7 +102,7 @@ com.example.nprojetoartesanato/
 The Android and web clients share the same Firestore collections.
 
 - `artesaos/{uid}`: `uid` and document ID match Firebase Authentication. The numeric `id` is retained as a local/legacy compatibility identifier.
-- `produtos/{documentId}`: `artesaoId` is the Firebase Auth UID, `firestoreId` is the Firestore document ID, `qrCodeId` is the scanned QR payload, `precoCentavos` is an integer, `quantidadeEstoque` is an integer, and `ativo` is boolean.
+- `produtos/{documentId}`: `id` is a deterministic numeric compatibility key used by the Room/UI layer, `firestoreId` is the authoritative Firestore document ID, `artesaoId` is the Firebase Auth UID, `qrCodeId` is the scanned QR payload, `precoCentavos` is an integer, `quantidadeEstoque` is an integer, and `ativo` is boolean.
 - `vendas/{id}`: canonical sales use `produtoId`, UID-based artisan and seller identifiers, `precoUnitarioCentavos`, `totalCentavos`, and a Firestore Timestamp in `dataHora`.
 
 New product documents use their QR UUID as their document ID. Older products can have a separate QR payload and document ID; migrations preserve both values so printed labels continue to work.
