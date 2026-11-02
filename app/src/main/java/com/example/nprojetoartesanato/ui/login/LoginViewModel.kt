@@ -79,31 +79,43 @@ class LoginViewModel(private val repository: ArtesaoRepository) : ViewModel() {
 
                 val uid = authResult.user?.uid
                 if (uid != null) {
-                    val docRef = FirebaseClient.artesaosCollection.document(uid)
-                    val snapshot = docRef.get().await()
+                    var numericId = (uid.hashCode().toLong() and 0x7FFFFFFF)
+                    var nome = googleName.ifBlank { "Artesão" }
+                    var email = googleEmail
 
-                    val numericId = if (snapshot.exists()) {
-                        snapshot.getLong("id") ?: (uid.hashCode().toLong() and 0x7FFFFFFF)
-                    } else {
-                        val newId = (uid.hashCode().toLong() and 0x7FFFFFFF)
-                        val artesaoData = hashMapOf(
-                            "id" to newId,
-                            "uid" to uid,
-                            "nome" to (googleName.ifBlank { "Artesão" }),
-                            "telefone" to "",
-                            "email" to googleEmail
-                        )
-                        docRef.set(artesaoData).await()
-                        newId
+                    // Try syncing with Firestore, but don't block login if Firestore security rules reject access
+                    try {
+                        val docRef = FirebaseClient.artesaosCollection.document(uid)
+                        val snapshot = docRef.get().await()
+
+                        if (snapshot.exists()) {
+                            numericId = snapshot.getLong("id") ?: numericId
+                            nome = snapshot.getString("nome") ?: nome
+                            email = snapshot.getString("email") ?: email
+                        } else {
+                            val artesaoData = hashMapOf(
+                                "id" to numericId,
+                                "uid" to uid,
+                                "nome" to nome,
+                                "telefone" to "",
+                                "email" to email
+                            )
+                            docRef.set(artesaoData).await()
+                        }
+                    } catch (firestoreError: Exception) {
+                        firestoreError.printStackTrace()
                     }
 
                     val artesao = Artesao(
                         id = numericId,
-                        nome = googleName.ifBlank { "Artesão" },
-                        email = googleEmail,
+                        nome = nome,
+                        email = email,
                         telefone = "",
                         senha = ""
                     )
+
+                    // Ensure local Room DB persists this Artesao record
+                    repository.cadastrar(artesao)
 
                     SessionManager.iniciarSessao(artesao, uid)
                     isLoading = false

@@ -206,7 +206,7 @@ fun LoginScreen(
                             try {
                                 val googleIdTokenOption = GetGoogleIdOption.Builder()
                                     .setFilterByAuthorizedAccounts(false)
-                                    .setServerClientId("668986612522-8bff3c95ad66f2a49b1c53.apps.googleusercontent.com")
+                                    .setServerClientId("668986612522-o3g1m25r6eq02vdo53epf8a4tqsflr4t.apps.googleusercontent.com")
                                     .setAutoSelectEnabled(false)
                                     .build()
 

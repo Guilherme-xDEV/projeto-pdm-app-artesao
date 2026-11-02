@@ -19,3 +19,8 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Google Play Services Auth & Credential Manager rules
+-keep class com.google.android.gms.auth.api.identity.** { *; }
+-keep class com.google.android.gms.internal.auth_api.** { *; }
+-dontwarn com.google.android.gms.auth.api.identity.**
