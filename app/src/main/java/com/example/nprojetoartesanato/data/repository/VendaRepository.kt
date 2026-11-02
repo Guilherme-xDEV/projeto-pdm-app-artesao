@@ -96,8 +96,11 @@ class VendaRepository(
                     "atualizadoEm" to FieldValue.serverTimestamp()
                 )
 
-                // Upgrade old price fields during the owner's next stock operation.
-                if (snapshot.get("precoCentavos") == null) {
+                // Only the product owner may migrate product fields. A seller who is
+                // recording a sale for another artisan may only change stock metadata.
+                val donoDoProduto = artesaoIdRemoto == uid ||
+                    ((artesaoIdRemoto as? Number)?.toLong() == artesaoAtual.id)
+                if (snapshot.get("precoCentavos") == null && donoDoProduto) {
                     updates["precoCentavos"] = precoCentavos
                     updates["preco"] = FieldValue.delete()
                     updates["artesaoNome"] = artesaoNome
