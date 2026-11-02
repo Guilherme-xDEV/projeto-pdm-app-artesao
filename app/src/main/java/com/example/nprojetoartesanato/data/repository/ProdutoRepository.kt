@@ -127,6 +127,28 @@ class ProdutoRepository(private val produtoDao: ProdutoDao) {
 
             val documentos = (canonicos.documents + legados.documents).distinctBy { it.id }
 
+            // Backfill metadata on documents created by the first web version.
+            canonicos.documents.forEach { document ->
+                try {
+                    val updates = mutableMapOf<String, Any>()
+                    if (document.getLong("id") == null) {
+                        updates["id"] = idLocal(document.id)
+                    }
+                    if (document.getString("firestoreId") != document.id) {
+                        updates["firestoreId"] = document.id
+                    }
+                    if (document.getString("artesaoNome").isNullOrBlank()) {
+                        updates["artesaoNome"] = artesao.nome
+                    }
+                    if (updates.isNotEmpty()) {
+                        updates["atualizadoEm"] = FieldValue.serverTimestamp()
+                        document.reference.update(updates).await()
+                    }
+                } catch (migrationError: Exception) {
+                    migrationError.printStackTrace()
+                }
+            }
+
             // Migrate legacy documents after the query, retaining their stable document IDs.
             legados.documents.forEach { document ->
                 try {
