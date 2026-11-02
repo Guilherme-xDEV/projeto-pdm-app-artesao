@@ -20,7 +20,7 @@ Built with modern Android development best practices and Jetpack libraries:
 - **UI Toolkit:** [Jetpack Compose](https://developer.android.com/jetpack/compose) with **Material 3**
 - **Navigation:** [Jetpack Navigation Compose](https://developer.android.com/guide/navigation/navigation-compose)
 - **Local Persistence:** [Room Database](https://developer.android.com/training/data-storage/room) (with KSP)
-- **Network / API:** [Retrofit](https://square.github.io/retrofit/) & [OkHttp](https://square.github.io/okhttp/) (with Logging Interceptor) & Gson
+- **Backend / Cloud Data:** [Firebase Authentication](https://firebase.google.com/docs/auth) and [Cloud Firestore](https://firebase.google.com/docs/firestore)
 - **QR Code & Scanning:** 
   - [Google ML Kit Barcode Scanning](https://developers.google.com/ml-kit/vision/barcode-scanning)
   - [CameraX](https://developer.android.com/training/camerax) (Lifecycle, Camera2, View)
@@ -71,7 +71,7 @@ com.example.nprojetoartesanato/
 - **💰 Sales & Transactions:**
   - Register new sales linked with products and artisans.
   - Track complete sales history with detailed cards.
-- **🔄 Hybrid Sync / Data Storage:** Local caching and offline resilience powered by Room database combined with remote REST API synchronization.
+- **🔄 Hybrid Sync / Data Storage:** Local caching powered by Room, synchronized with the shared Firebase Cloud Firestore project used by the web application.
 
 ---
 
@@ -81,7 +81,7 @@ com.example.nprojetoartesanato/
 2. **SDK Requirements:**
    - **Min SDK:** 24 (Android 7.0+)
    - **Compile/Target SDK:** 36 (Android 15+)
-3. **Backend API:** Ensure the Spring Boot backend server is running and accessible (or pointing to the live Railway deployment).
+3. **Firebase:** Ensure `app/google-services.json` belongs to the same Firebase project used by Artesão Digital Web, and enable Email/Password authentication and Cloud Firestore.
 
 ---
 
@@ -94,3 +94,17 @@ com.example.nprojetoartesanato/
 2. Open the project in **Android Studio**.
 3. Let Gradle sync dependencies.
 4. Run the app on an Android emulator or a physical device with Camera permissions enabled.
+
+---
+
+## Shared Firestore product contract
+
+The Android and web clients share the same Firestore collections.
+
+- `artesaos/{uid}`: `uid` and document ID match Firebase Authentication. The numeric `id` is retained as a local/legacy compatibility identifier.
+- `produtos/{documentId}`: `id` is a deterministic numeric compatibility key used by the Room/UI layer, `firestoreId` is the authoritative Firestore document ID, `artesaoId` is the Firebase Auth UID, `qrCodeId` is the scanned QR payload, `precoCentavos` is an integer, `quantidadeEstoque` is an integer, and `ativo` is boolean.
+- `vendas/{id}`: canonical sales use `produtoId`, UID-based artisan and seller identifiers, `precoUnitarioCentavos`, `totalCentavos`, and a Firestore Timestamp in `dataHora`.
+
+New product documents use their QR UUID as their document ID. Older products can have a separate QR payload and document ID; migrations preserve both values so printed labels continue to work.
+
+The local Room database adds `firestoreId` through a version 1-to-2 migration. When the artisan opens the product list, the repository loads canonical UID-owned records and legacy numeric-ID records, then migrates the latter in place. Updated Firestore Security Rules from the web repository must be deployed before releasing this Android version.

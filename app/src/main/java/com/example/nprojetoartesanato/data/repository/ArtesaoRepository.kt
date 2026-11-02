@@ -54,6 +54,11 @@ class ArtesaoRepository(private val artesaoDao: ArtesaoDao) {
             val docSnapshot = FirebaseClient.artesaosCollection.document(uid).get().await()
             if (docSnapshot.exists()) {
                 val numericId = docSnapshot.getLong("id") ?: (uid.hashCode().toLong() and 0x7FFFFFFF)
+                if (docSnapshot.getLong("id") == null || docSnapshot.getString("uid") != uid) {
+                    FirebaseClient.artesaosCollection.document(uid).update(
+                        mapOf("id" to numericId, "uid" to uid)
+                    ).await()
+                }
                 val nome = docSnapshot.getString("nome") ?: ""
                 val telefone = docSnapshot.getString("telefone") ?: ""
 

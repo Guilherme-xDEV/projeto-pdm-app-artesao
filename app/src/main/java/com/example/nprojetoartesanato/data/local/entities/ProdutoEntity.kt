@@ -1,5 +1,6 @@
 package com.example.nprojetoartesanato.data.local.entities
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.example.nprojetoartesanato.model.Produto
@@ -13,7 +14,8 @@ data class ProdutoEntity(
     val quantidadeEstoque: Int,
     val artesaoId: Long,
     val qrCodeId: String,
-    val ativo: Boolean = true
+    val ativo: Boolean = true,
+    @ColumnInfo(defaultValue = "''") val firestoreId: String = ""
 )
 
 fun ProdutoEntity.toDomain() = Produto(
@@ -24,7 +26,8 @@ fun ProdutoEntity.toDomain() = Produto(
     quantidadeEstoque = quantidadeEstoque,
     artesaoId = artesaoId,
     qrCodeId = qrCodeId,
-    ativo = ativo
+    ativo = ativo,
+    firestoreId = firestoreId
 )
 
 fun Produto.toEntity() = ProdutoEntity(
@@ -35,5 +38,6 @@ fun Produto.toEntity() = ProdutoEntity(
     quantidadeEstoque = quantidadeEstoque,
     artesaoId = artesaoId,
     qrCodeId = qrCodeId,
-    ativo = ativo
+    ativo = ativo,
+    firestoreId = firestoreId
 )
