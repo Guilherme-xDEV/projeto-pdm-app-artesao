@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -18,11 +19,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.nprojetoartesanato.navigation.Screens
+import com.example.nprojetoartesanato.util.PhoneVisualTransformation
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,8 +37,11 @@ fun ProfileScreen(
     val uiState by viewModel.uiState.collectAsState()
     
     var nome by remember(artesao) { mutableStateOf(artesao?.nome ?: "") }
-    var telefone by remember(artesao) { mutableStateOf(artesao?.telefone ?: "") }
+    var telefone by remember(artesao) { mutableStateOf(artesao?.telefone?.filter { it.isDigit() } ?: "") }
     
+    var nomeErro by remember { mutableStateOf<String?>(null) }
+    var telefoneErro by remember { mutableStateOf<String?>(null) }
+
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(uiState) {
@@ -64,8 +70,12 @@ fun ProfileScreen(
                 },
                 actions = {
                     IconButton(
-                        onClick = { viewModel.atualizarPerfil(nome, telefone) },
-                        enabled = uiState !is ProfileUiState.Loading
+                        onClick = {
+                            if (nomeErro == null && telefoneErro == null) {
+                                viewModel.atualizarPerfil(nome, telefone)
+                            }
+                        },
+                        enabled = uiState !is ProfileUiState.Loading && nomeErro == null && telefoneErro == null
                     ) {
                         if (uiState is ProfileUiState.Loading) {
                             CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
@@ -115,20 +125,41 @@ fun ProfileScreen(
             // Form Section
             OutlinedTextField(
                 value = nome,
-                onValueChange = { nome = it },
+                onValueChange = { input ->
+                    nome = input
+                    nomeErro = if (input.trim().length < 3) "Nome deve ter pelo menos 3 letras" else null
+                },
                 label = { Text("Nome Completo") },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true,
+                isError = nomeErro != null,
+                supportingText = {
+                    nomeErro?.let { Text(it) }
+                }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
                 value = telefone,
-                onValueChange = { telefone = it },
-                label = { Text("Telefone") },
+                onValueChange = { input ->
+                    val filtrado = input.filter { it.isDigit() }.take(11)
+                    telefone = filtrado
+                    telefoneErro = if (filtrado.isNotEmpty() && (filtrado.length < 10 || filtrado.length > 11)) {
+                        "Telefone inválido (DDD + número)"
+                    } else null
+                },
+                label = { Text("Telefone (DDD + número)") },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true,
+                visualTransformation = PhoneVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                isError = telefoneErro != null,
+                supportingText = {
+                    telefoneErro?.let { Text(it) }
+                }
             )
 
             Spacer(modifier = Modifier.weight(1f))

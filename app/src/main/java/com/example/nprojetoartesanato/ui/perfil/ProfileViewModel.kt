@@ -35,9 +35,22 @@ class ProfileViewModel(private val repository: ArtesaoRepository) : ViewModel() 
     fun atualizarPerfil(nome: String, telefone: String) {
         val currentArtesao = _artesao.value ?: return
         
+        val nomeTrim = nome.trim()
+        val telefoneLimpo = telefone.filter { it.isDigit() }
+
+        if (nomeTrim.length < 3) {
+            _uiState.value = ProfileUiState.Error("Nome deve ter pelo menos 3 letras.")
+            return
+        }
+
+        if (telefoneLimpo.isNotEmpty() && (telefoneLimpo.length < 10 || telefoneLimpo.length > 11)) {
+            _uiState.value = ProfileUiState.Error("Telefone inválido (DDD + número).")
+            return
+        }
+
         viewModelScope.launch {
             _uiState.value = ProfileUiState.Loading
-            val dto = AtualizarArtesaoDTO(nome = nome, telefone = telefone)
+            val dto = AtualizarArtesaoDTO(nome = nomeTrim, telefone = telefoneLimpo)
             val atualizado = repository.atualizar(currentArtesao.id, dto)
             
             if (atualizado != null) {
