@@ -10,7 +10,6 @@ import com.example.nprojetoartesanato.model.Produto
 import com.example.nprojetoartesanato.model.Venda
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.Timestamp
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
