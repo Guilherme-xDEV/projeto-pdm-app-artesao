@@ -10,10 +10,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -31,8 +37,18 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import kotlinx.coroutines.launch
+import androidx.compose.material3.OutlinedButton
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -44,6 +60,9 @@ fun LoginScreen(
     navController: NavController,
     viewModel: LoginViewModel = viewModel()
 ) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
     val email = viewModel.email
     val senha = viewModel.senha
     val erro = viewModel.erro
@@ -127,12 +146,21 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
+                var senhaVisivel by remember { mutableStateOf(false) }
+
                 OutlinedTextField(
                     value = senha,
                     onValueChange = { viewModel.onSenhaChange(it) },
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Senha") },
-                    visualTransformation = PasswordVisualTransformation(),
+                    visualTransformation = if (senhaVisivel) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        val image = if (senhaVisivel) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                        val description = if (senhaVisivel) "Ocultar senha" else "Mostrar senha"
+                        IconButton(onClick = { senhaVisivel = !senhaVisivel }) {
+                            Icon(imageVector = image, contentDescription = description)
+                        }
+                    },
                     singleLine = true
                 )
 
@@ -167,6 +195,55 @@ fun LoginScreen(
                     } else {
                         Text("Entrar")
                     }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isLoading,
+                    onClick = {
+                        coroutineScope.launch {
+                            try {
+                                val googleIdTokenOption = GetGoogleIdOption.Builder()
+                                    .setFilterByAuthorizedAccounts(false)
+                                    .setServerClientId("668986612522-o3g1m25r6eq02vdo53epf8a4tqsflr4t.apps.googleusercontent.com")
+                                    .setAutoSelectEnabled(false)
+                                    .build()
+
+                                val request = GetCredentialRequest.Builder()
+                                    .addCredentialOption(googleIdTokenOption)
+                                    .build()
+
+                                val credentialManager = CredentialManager.create(context)
+                                val result = credentialManager.getCredential(context, request)
+                                val credential = result.credential
+
+                                if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+                                    val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                                    val idToken = googleIdTokenCredential.idToken
+                                    val googleName = googleIdTokenCredential.displayName ?: "Artesão"
+                                    val googleEmail = googleIdTokenCredential.id
+
+                                    viewModel.loginComGoogle(idToken, googleName, googleEmail) {
+                                        navController.navigate(Screens.Dashboard.route) {
+                                            popUpTo(Screens.Login.route) { inclusive = true }
+                                        }
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+                        }
+                    }
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_google),
+                        contentDescription = "Google",
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Entrar com o Google")
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
